@@ -1,0 +1,49 @@
+# ========================
+# MediTrack .gitignore
+# ========================
+
+# Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.eclipse/
+.classpath
+.project
+.settings/
+*.swp
+*.swo
+.vscode/
+
+# Node / Frontend
+node_modules/
+dist/
+.pnp
+.pnp.js
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Flyway / DB sensitive
+# application.properties (intentionally kept for demo purposes)
