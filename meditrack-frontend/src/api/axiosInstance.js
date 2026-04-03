@@ -9,6 +9,15 @@ const axiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('meditrack_token')
+  if (token) {
+    config.headers = config.headers || {}
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 /**
  * Global response interceptor.
  * Extracts the error message from the Spring Boot ErrorResponseDTO
