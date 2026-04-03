@@ -1,90 +1,117 @@
-import { useState, useEffect, useRef } from 'react'
-import { getPendingReminders } from '../../api/reminderApi'
+import React, { useState, useEffect } from 'react';
+import { Bell, AlertTriangle, Menu, LogIn } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import Button from '../ui/Button';
+import axios from 'axios';
+import { useAuth } from '../../contexts/AuthContext';
+import { useAuthModal } from '../../contexts/AuthModalContext';
 
-export default function TopBar({ title }) {
-  const [reminders, setReminders]     = useState([])
-  const [showDropdown, setShowDropdown] = useState(false)
-  const dropdownRef = useRef(null)
+const navItems = [
+  { label: 'Dashboard',     path: '/' },
+  { label: 'Medications',   path: '/medications' },
+  { label: 'Dose Log',      path: '/dose-log' },
+  { label: 'Vitals',        path: '/vitals' },
+  { label: 'Symptoms',      path: '/symptoms' },
+  { label: 'Prescriptions', path: '/prescriptions' },
+  { label: 'Appointments',  path: '/appointments' },
+  { label: 'Doctor Visits', path: '/doctor-visits' },
+  { label: 'Profile',       path: '/profile' },
+];
 
-  // Poll the reminders endpoint every 60 seconds
+const TopBar = ({ onToggleSidebar }) => {
+  const { user, isGuest } = useAuth();
+  const { openAuthModal } = useAuthModal();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [hasPendingReminders, setHasPendingReminders] = useState(false);
+
+  const currentPage = navItems.find(item => 
+    item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
+  );
+
   useEffect(() => {
-    const fetchReminders = async () => {
+    if (isGuest) return; // Reminders need auth
+
+    const checkReminders = async () => {
       try {
-        const data = await getPendingReminders()
-        setReminders(data)
-      } catch {
-        // Silently fail — bell just shows 0
+        const response = await axios.get('http://localhost:8080/api/reminders/pending');
+        setHasPendingReminders(response.data.length > 0);
+      } catch (err) {
+        // Silent error for polling
       }
-    }
+    };
 
-    fetchReminders()
-    const interval = setInterval(fetchReminders, 60_000)
-    return () => clearInterval(interval)   // Cleanup on unmount
-  }, [])
+    checkReminders();
+    const interval = setInterval(checkReminders, 60000);
+    return () => clearInterval(interval);
+  }, [isGuest]);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setShowDropdown(false)
-      }
+  const handleEmergency = () => {
+    if (isGuest) {
+      openAuthModal('Emergency Mode');
+      return;
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
+    navigate('/emergency');
+  };
+
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   return (
-    <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0">
-      <h1 className="text-lg font-semibold text-gray-800">{title}</h1>
-
-      {/* Reminder Bell */}
-      <div className="relative" ref={dropdownRef}>
-        <button
-          onClick={() => setShowDropdown(v => !v)}
-          className="relative p-2 rounded-full hover:bg-gray-100 text-gray-600"
-          aria-label="Upcoming dose reminders"
+    <header className="h-[72px] bg-page-bg/95 border-b border-border flex items-center justify-between px-4 sm:px-6 lg:px-8 fixed top-0 right-0 left-0 lg:left-[236px] z-30 backdrop-blur-sm">
+      <div className="flex items-center gap-4">
+        <button 
+          onClick={onToggleSidebar}
+          className="lg:hidden p-2 hover:bg-white rounded-md transition-colors text-text-secondary border border-border"
         >
-          <span className="text-xl">🔔</span>
-          {reminders.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs
-                             rounded-full w-4 h-4 flex items-center justify-center font-bold">
-              {reminders.length}
-            </span>
+          <Menu className="w-5 h-5" />
+        </button>
+        <h2 className="text-lg font-semibold text-text-primary">
+          {currentPage?.label || 'MediTrack'}
+        </h2>
+      </div>
+
+      <div className="flex items-center gap-3 md:gap-4">
+        <button className="p-2.5 hover:bg-white rounded-md transition-colors relative text-text-secondary border border-border">
+          <Bell className="w-4 h-4" />
+          {hasPendingReminders && (
+            <span className="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full border border-white" />
           )}
         </button>
 
-        {showDropdown && (
-          <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200
-                          rounded-xl shadow-lg z-50 overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50">
-              <p className="text-sm font-semibold text-gray-700">Upcoming Doses</p>
-              <p className="text-xs text-gray-500">Due within the next 30 minutes</p>
-            </div>
-            {reminders.length === 0 ? (
-              <p className="px-4 py-4 text-sm text-gray-500 text-center">
-                No doses due soon 🎉
-              </p>
+        <Button
+          variant="outline"
+          size="sm" 
+          className="text-danger border-danger/30 hover:bg-danger-light"
+          onClick={handleEmergency}
+        >
+          <AlertTriangle className="w-4 h-4 mr-2" />
+          Emergency
+        </Button>
+
+        {isGuest ? (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => openAuthModal()}
+          >
+            <LogIn className="w-4 h-4 mr-2" />
+            Sign in
+          </Button>
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-accent text-white text-xs font-bold flex items-center justify-center cursor-pointer overflow-hidden border border-white shadow-soft">
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
             ) : (
-              <ul className="max-h-64 overflow-y-auto divide-y divide-gray-100">
-                {reminders.map(r => (
-                  <li key={r.id} className="px-4 py-3 flex items-start gap-3">
-                    <span className="text-lg mt-0.5">💊</span>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{r.medicationName}</p>
-                      <p className="text-xs text-gray-500">{r.medicationDosage}</p>
-                      <p className="text-xs text-blue-600 font-medium mt-0.5">
-                        Due at {new Date(r.scheduledTime).toLocaleTimeString([], {
-                          hour: '2-digit', minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              getInitials(user?.fullName)
             )}
           </div>
         )}
       </div>
     </header>
-  )
-}
+  );
+};
+
+export default TopBar;

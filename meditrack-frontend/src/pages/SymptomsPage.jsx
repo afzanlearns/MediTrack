@@ -1,124 +1,209 @@
-import { useState, useEffect } from 'react'
-import { getSymptoms, getSymptomNames, logSymptom } from '../api/symptomApi'
-import SeverityLineChart from '../components/symptoms/SeverityLineChart.jsx'
-import AddSymptomForm from '../components/symptoms/AddSymptomForm.jsx'
-import SymptomHistoryList from '../components/symptoms/SymptomHistoryList.jsx'
+import React, { useEffect, useMemo, useState } from 'react';
+import { format } from 'date-fns';
+import { Thermometer, Plus, Trash2, BarChart3 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import PageHeader from '../components/ui/PageHeader';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Badge from '../components/ui/Badge';
+import Table from '../components/ui/Table';
+import EmptyState from '../components/ui/EmptyState';
+import axios from 'axios';
 
-export default function SymptomsPage() {
-  const [symptoms, setSymptoms]         = useState([])
-  const [names, setNames]               = useState([])
-  const [loading, setLoading]           = useState(true)
+const SymptomsPage = ({ showToast }) => {
+  const [symptoms, setSymptoms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    name: '',
+    date: format(new Date(), 'yyyy-MM-dd'),
+    severity: 5,
+    notes: '',
+  });
 
-  // Filter state
-  const defaultFrom = new Date(Date.now() - 30 * 864e5).toISOString().split('T')[0]
-  const defaultTo   = new Date().toISOString().split('T')[0]
-  const [selectedName, setSelectedName] = useState('')
-  const [from, setFrom]                 = useState(defaultFrom)
-  const [to, setTo]                     = useState(defaultTo)
+  useEffect(() => {
+    fetchSymptoms();
+  }, []);
 
   const fetchSymptoms = async () => {
-    setLoading(true)
     try {
-      const params = {}
-      if (selectedName) params.name = selectedName
-      if (from) params.from = from
-      if (to)   params.to   = to
-      const data = await getSymptoms(params)
-      setSymptoms(data)
+      const res = await axios.get('http://localhost:8080/api/symptoms');
+      setSymptoms(res.data || []);
     } catch {
-      // Toast handles errors
+      showToast('Failed to load symptoms', 'danger');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const fetchNames = async () => {
-    try { setNames(await getSymptomNames()) } catch {}
-  }
+  const handleLogSymptom = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('http://localhost:8080/api/symptoms', formData);
+      showToast('Symptom logged');
+      setFormData({
+        name: '',
+        date: format(new Date(), 'yyyy-MM-dd'),
+        severity: 5,
+        notes: '',
+      });
+      fetchSymptoms();
+    } catch {
+      showToast('Failed to log symptom', 'danger');
+    }
+  };
 
-  // Fetch on mount and whenever filters change
-  useEffect(() => { fetchSymptoms() }, [selectedName, from, to])
-  useEffect(() => { fetchNames() }, [])
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8080/api/symptoms/${id}`);
+      showToast('Symptom removed');
+      fetchSymptoms();
+    } catch {
+      showToast('Failed to delete symptom', 'danger');
+    }
+  };
 
-  const handleLog = async (data) => {
-    await logSymptom(data)
-    await Promise.all([fetchSymptoms(), fetchNames()])
-  }
+  const trendData = useMemo(
+    () =>
+      [...symptoms]
+        .reverse()
+        .slice(-12)
+        .map((s) => ({
+          date: format(new Date(s.date), 'MMM d'),
+          severity: Number(s.severity || 0),
+        })),
+    [symptoms]
+  );
 
-  const handleDeleted = (id) => {
-    setSymptoms(prev => prev.filter(s => s.id !== id))
-  }
+  const severityVariant = (value) => {
+    if (value >= 7) return 'danger';
+    if (value >= 4) return 'warning';
+    return 'success';
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-800">Symptom Journal</h2>
-        <p className="text-sm text-gray-500">Track and visualise symptom severity over time.</p>
-      </div>
+      <PageHeader title="Symptoms" subtitle="Log severity and monitor short-term symptom trends" />
 
-      {/* Filter bar */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap gap-4 items-end">
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Symptom</label>
-          <select
-            value={selectedName}
-            onChange={e => setSelectedName(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All symptoms</option>
-            {names.map(n => <option key={n} value={n}>{n}</option>)}
-          </select>
+      <section className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <Card className="xl:col-span-4 p-5">
+          <h2 className="text-[20px] font-semibold text-text-primary mb-4">Log Symptom</h2>
+          <form onSubmit={handleLogSymptom} className="space-y-4">
+            <Input
+              label="Symptom"
+              icon={<Thermometer className="w-4 h-4" />}
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Headache, fatigue, nausea"
+              required
+            />
+            <Input
+              label="Date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              required
+            />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-text-primary">Severity</label>
+                <Badge variant={severityVariant(formData.severity)}>Level {formData.severity}</Badge>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={formData.severity}
+                onChange={(e) => setFormData({ ...formData, severity: Number(e.target.value) })}
+                className="w-full accent-accent"
+              />
+              <div className="flex justify-between text-xs text-text-secondary">
+                <span>Mild</span>
+                <span>Moderate</span>
+                <span>Severe</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-text-primary">Notes</label>
+              <textarea
+                className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-white min-h-[90px]"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Triggers, duration, and context"
+              />
+            </div>
+
+            <Button type="submit" className="w-full">
+              <Plus className="w-4 h-4 mr-2" />
+              Save symptom
+            </Button>
+          </form>
+        </Card>
+
+        <div className="xl:col-span-8 space-y-6">
+          <Card className="p-5">
+            <h2 className="text-[20px] font-semibold text-text-primary mb-4">Severity Trend</h2>
+            <div className="h-[220px]">
+              {trendData.length === 0 ? (
+                <EmptyState icon={BarChart3} title="No trend yet" description="Add symptom entries to generate trend insights." />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={trendData}>
+                    <CartesianGrid stroke="#E5E7EB" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fill: '#6B7280', fontSize: 11 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} tickLine={false} axisLine={false} domain={[0, 10]} />
+                    <Tooltip />
+                    <Bar dataKey="severity" fill="#7FBF7F" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-0 overflow-hidden">
+            <Table
+              loading={loading}
+              data={symptoms}
+              columns={[
+                { key: 'date', label: 'Date', render: (s) => format(new Date(s.date), 'MMM d, yyyy') },
+                { key: 'name', label: 'Symptom', render: (s) => <span className="font-medium text-text-primary">{s.name}</span> },
+                {
+                  key: 'severity',
+                  label: 'Severity',
+                  render: (s) => (
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${
+                          Number(s.severity) >= 7 ? 'bg-danger' : Number(s.severity) >= 4 ? 'bg-warning' : 'bg-success'
+                        }`}
+                      />
+                      <Badge variant={severityVariant(Number(s.severity))}>Level {s.severity}</Badge>
+                    </div>
+                  ),
+                },
+                { key: 'notes', label: 'Notes', render: (s) => <span className="text-sm text-text-secondary truncate block max-w-[280px]">{s.notes || 'No note'}</span> },
+                {
+                  key: 'actions',
+                  label: '',
+                  render: (s) => (
+                    <button
+                      onClick={() => handleDelete(s.id)}
+                      className="p-2 rounded-md border border-border text-text-secondary hover:text-danger hover:bg-danger-light"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  ),
+                },
+              ]}
+              emptyMessage="No symptom entries yet"
+            />
+          </Card>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
-          <input
-            type="date" value={from}
-            onChange={e => setFrom(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
-          <input
-            type="date" value={to}
-            onChange={e => setTo(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <button
-          onClick={() => { setSelectedName(''); setFrom(defaultFrom); setTo(defaultTo) }}
-          className="text-xs text-blue-600 hover:underline"
-        >
-          Reset
-        </button>
-      </div>
-
-      {/* Chart */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">
-          Severity Trend {selectedName ? `— ${selectedName}` : '(All Symptoms)'}
-        </h3>
-        {loading ? (
-          <p className="text-sm text-gray-400 animate-pulse py-8 text-center">Loading chart…</p>
-        ) : (
-          <SeverityLineChart symptoms={symptoms} />
-        )}
-      </div>
-
-      {/* Log form */}
-      <AddSymptomForm onSave={handleLog} />
-
-      {/* History table */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">
-          History ({symptoms.length} entries)
-        </h3>
-        {loading ? (
-          <p className="text-sm text-gray-400 animate-pulse">Loading…</p>
-        ) : (
-          <SymptomHistoryList symptoms={symptoms} onDeleted={handleDeleted} />
-        )}
-      </div>
+      </section>
     </div>
-  )
-}
+  );
+};
+
+export default SymptomsPage;

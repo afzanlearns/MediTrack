@@ -1,8 +1,53 @@
 import axiosInstance from './axiosInstance'
+import { guestStorage } from '../services/guestStorage'
 
-export const getMedications    = ()           => axiosInstance.get('/medications').then(r => r.data)
-export const getActiveMeds     = ()           => axiosInstance.get('/medications/active').then(r => r.data)
-export const getMedicationById = (id)         => axiosInstance.get(`/medications/${id}`).then(r => r.data)
-export const createMedication  = (data)       => axiosInstance.post('/medications', data).then(r => r.data)
-export const updateMedication  = (id, data)   => axiosInstance.put(`/medications/${id}`, data).then(r => r.data)
-export const deleteMedication  = (id)         => axiosInstance.delete(`/medications/${id}`)
+const isGuest = () => 
+  !localStorage.getItem('meditrack_token') && 
+  localStorage.getItem('meditrack_guest') === 'true'
+
+export const getMedications = async () => {
+  if (isGuest()) return guestStorage.getMedications()
+  const res = await axiosInstance.get('/medications')
+  return res.data
+}
+
+export const createMedication = async (data) => {
+  if (isGuest()) return guestStorage.saveMedication(data)
+  const res = await axiosInstance.post('/medications', data)
+  return res.data
+}
+
+export const updateMedication = async (id, data) => {
+  if (isGuest()) return guestStorage.updateMedication(id, data)
+  const res = await axiosInstance.put(`/medications/${id}`, data)
+  return res.data
+}
+
+export const deleteMedication = async (id) => {
+  if (isGuest()) return guestStorage.deleteMedication(id)
+  const res = await axiosInstance.delete(`/medications/${id}`)
+  return res.data
+}
+
+export const getActiveMeds = async () => {
+  if (isGuest()) return guestStorage.getMedications().filter(m => m.active !== false)
+  const res = await axiosInstance.get('/medications/active')
+  return res.data
+}
+
+export const getMedicationById = async (id) => {
+  if (isGuest()) return guestStorage.getMedications().find(m => m.id === id)
+  const res = await axiosInstance.get(`/medications/${id}`)
+  return res.data
+}
+
+const medicationApi = {
+  getMedications,
+  getActiveMeds,
+  getMedicationById,
+  createMedication,
+  updateMedication,
+  deleteMedication
+};
+
+export default medicationApi;

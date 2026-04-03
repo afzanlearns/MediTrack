@@ -1,34 +1,34 @@
-import { Outlet, useLocation } from 'react-router-dom'
-import Sidebar from './Sidebar.jsx'
-import TopBar from './TopBar.jsx'
-import Toast from '../shared/Toast.jsx'
+import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import TopBar from './TopBar';
 
-const pageTitles = {
-  '/':            'Dashboard',
-  '/medications': 'Medications',
-  '/doses':       'Dose Log',
-  '/symptoms':    'Symptom Journal',
-  '/visits':      'Doctor Visits',
-}
+const Layout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-export default function Layout() {
-  const { pathname } = useLocation()
-  const title = pageTitles[pathname] ?? 'MediTrack'
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
-      <Sidebar />
+    <div className="min-h-screen bg-page-bg">
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/25 z-40 lg:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
 
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <TopBar title={title} />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-        <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
+      <div className="lg:pl-[236px] min-h-screen">
+        <TopBar onToggleSidebar={toggleSidebar} />
+        <main className="pt-[72px] px-4 sm:px-6 lg:px-8 pb-8">
+          <div className="content-shell">
+            <Outlet />
+          </div>
         </main>
       </div>
-
-      {/* Global toast notification — listens for 'api-error' events */}
-      <Toast />
     </div>
-  )
-}
+  );
+};
+
+export default Layout;
