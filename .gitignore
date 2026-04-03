@@ -42,8 +42,43 @@ Thumbs.db
 
 # Environment
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
 
-# Flyway / DB sensitive
-# application.properties (intentionally kept for demo purposes)
+# Backend env files
+meditrack-backend/.env
+meditrack-backend/.env.*
+!meditrack-backend/.env.example
+
+# Frontend env files
+meditrack-frontend/.env
+meditrack-frontend/.env.*
+!meditrack-frontend/.env.example
+
+# Sensitive keys/certs
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Local database dumps/backups
+*.dump
+*.bak
+
+# Runtime uploads and generated app data
+meditrack-backend/uploads/*
+!meditrack-backend/uploads/.gitkeep
+
+# Test and coverage artifacts
+coverage/
+.nyc_output/
+*.lcov
+surefire-reports/
+
+# Optional: keep local notes out of commits
+*.tmp
+*.temp

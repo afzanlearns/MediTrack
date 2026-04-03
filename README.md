@@ -143,23 +143,36 @@ Using MySQL Workbench:
 
 ### Step 1 — Configure your database credentials
 
-Open the file:
+Datasource credentials now come from environment variables.
+
+Default profiles:
+
+- `local` (default): safe local defaults, override with env vars when needed
+- `prod`: requires env vars (no credential defaults)
+
+One-copy setup (recommended):
+
+```bash
+cd meditrack-backend
+cp .env.example .env
+# edit .env with your values, then load it
+set -a && source .env && set +a
+```
+
+Or set variables manually (example):
+
+```bash
+export DB_URL='jdbc:mysql://localhost:3306/meditrack_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true'
+export DB_USERNAME='meditrack'
+export DB_PASSWORD='your_mysql_password'
+```
+
+Profile files:
 
 ```
 meditrack-backend/src/main/resources/application.properties
-```
-
-Update the following two lines to match your MySQL installation:
-
-```properties
-spring.datasource.username=root
-spring.datasource.password=your_password   # ← replace with your actual MySQL password
-```
-
-If your MySQL runs on a different port or host, also update:
-
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/meditrack_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+meditrack-backend/src/main/resources/application-local.properties
+meditrack-backend/src/main/resources/application-prod.properties
 ```
 
 ### Step 2 — Build the project
@@ -198,6 +211,17 @@ You need **two terminal windows** — one for the backend and one for the fronte
 
 ```bash
 cd meditrack-backend
+mvn spring-boot:run
+```
+
+For production profile:
+
+```bash
+cd meditrack-backend
+export SPRING_PROFILES_ACTIVE=prod
+export DB_URL='jdbc:mysql://<host>:3306/meditrack_db?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true'
+export DB_USERNAME='<prod_user>'
+export DB_PASSWORD='<prod_password>'
 mvn spring-boot:run
 ```
 
@@ -290,13 +314,16 @@ This gives you an interactive Swagger UI where you can browse and test all REST 
 ## 10. Troubleshooting
 
 ### Backend won't start — "Access denied for user 'root'"
-Your MySQL password in `application.properties` is incorrect. Double-check `spring.datasource.password`.
+Your datasource env vars are wrong or missing. Re-check `DB_USERNAME` and `DB_PASSWORD`.
 
 ### Backend won't start — "Unknown database 'meditrack_db'"
 You haven't created the database yet. Run `CREATE DATABASE meditrack_db ...` as described in Step 4.
 
 ### Backend won't start — "Validate failed: missing physical table"
 Flyway didn't run. Check that `spring.flyway.enabled=true` is set in `application.properties`.
+
+### Backend won't start — "Could not resolve placeholder 'DB_PASSWORD'"
+You are likely running with `prod` profile without required env vars. Set `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD`, or switch to local profile.
 
 ### Frontend shows "Network Error" or blank data
 The backend isn't running. Start it with `mvn spring-boot:run` and confirm it's on port 8080.
