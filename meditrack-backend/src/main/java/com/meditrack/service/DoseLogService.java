@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Transactional
+@SuppressWarnings("null")
 public class DoseLogService {
 
     private final DoseLogRepository doseLogRepository;

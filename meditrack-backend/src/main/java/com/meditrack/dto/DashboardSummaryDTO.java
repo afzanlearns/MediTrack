@@ -12,6 +12,8 @@ public class DashboardSummaryDTO {
     private int activeMedicationCount;
     private List<DoseLogDTO> todaysDoses;   // All dose entries for today
     private List<SymptomDTO> recentSymptoms; // Last 5 symptom entries
+    private AppointmentDTO nextAppointment; // Nearest upcoming appointment
+    private VitalsDTO latestVitals; // Most recent vitals entry
 
     public DashboardSummaryDTO() {}
 
@@ -27,4 +29,10 @@ public class DashboardSummaryDTO {
 
     public List<SymptomDTO> getRecentSymptoms() { return recentSymptoms; }
     public void setRecentSymptoms(List<SymptomDTO> recentSymptoms) { this.recentSymptoms = recentSymptoms; }
+
+    public AppointmentDTO getNextAppointment() { return nextAppointment; }
+    public void setNextAppointment(AppointmentDTO nextAppointment) { this.nextAppointment = nextAppointment; }
+
+    public VitalsDTO getLatestVitals() { return latestVitals; }
+    public void setLatestVitals(VitalsDTO latestVitals) { this.latestVitals = latestVitals; }
 }

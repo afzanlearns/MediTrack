@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Transactional
+@SuppressWarnings("null")
 public class DoctorVisitService {
 
     private final DoctorVisitRepository visitRepository;
