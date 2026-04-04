@@ -9,56 +9,58 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
   }
-  
+
   html {
-    background-color: #0A0E13;
     color-scheme: dark;
+    background: #060a10;
   }
-  
+
   body {
-    background-color: #0A0E13;
-    background-image: radial-gradient(circle, #1E2D3D 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-attachment: fixed;
-    color: #E8EDF2;
+    min-height: 100vh;
+    margin: 0;
+    color: #e8edf2;
     font-family: 'Outfit', sans-serif;
+    background:
+      radial-gradient(circle at 16% 8%, rgba(0, 212, 170, 0.12), transparent 28%),
+      radial-gradient(circle at 85% 0%, rgba(59, 130, 246, 0.12), transparent 24%),
+      linear-gradient(180deg, #070d16 0%, #060a10 100%);
     overscroll-behavior-y: none;
   }
-  
-  /* Custom scrollbar (webkit) */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #1E2D3D; border-radius: 2px; }
-  
-  /* Remove number input spinners */
+
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1e2d3d;
+    border-radius: 999px;
+  }
+
   input[type='number']::-webkit-outer-spin-button,
   input[type='number']::-webkit-inner-spin-button {
     -webkit-appearance: none;
+    margin: 0;
   }
-  
-  /* Date input dark styling */
+
   input[type='date']::-webkit-calendar-picker-indicator {
-    filter: invert(0.5);
+    filter: invert(0.45);
     cursor: pointer;
   }
 }
 
 @layer utilities {
-  /* Glow utilities */
   .glow-accent {
-    box-shadow: 0 0 0 1px #00D4AA33, 0 4px 32px rgba(0, 212, 170, 0.12);
+    box-shadow: 0 0 0 1px #00d4aa33, 0 8px 28px rgba(0, 212, 170, 0.18);
   }
-  
-  .glow-danger {
-    box-shadow: 0 0 0 1px #EF44441A, 0 4px 24px rgba(239, 68, 68, 0.1);
-  }
-  
-  /* Active press scale */
+
   .press {
     @apply transition-transform duration-100 active:scale-[0.97];
   }
-  
-  /* Font mono for numbers */
+
   .num {
     font-family: 'DM Mono', monospace;
   }

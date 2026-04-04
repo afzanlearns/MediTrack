@@ -1,18 +1,87 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { Calendar } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
+import { Loader2 } from 'lucide-react'
+import { format } from 'date-fns'
+import { getVitals, logVitals } from '../api/vitalsApi'
+import { mapVitalsView } from '../utils/viewMappers'
+import { toast } from '../utils/toast'
+
+const TABS = ['Blood Pressure', 'Blood Sugar', 'Heart Rate']
+
+const emptyForm = {
+  recordedDate: format(new Date(), 'yyyy-MM-dd'),
+  systolic: '',
+  diastolic: '',
+  bloodSugar: '',
+  heartRate: '',
+  notes: '',
+}
 
 const VitalsPage = () => {
-  const [activeTab, setActiveTab] = useState('Blood Pressure');
+  const [activeTab, setActiveTab] = useState('Blood Pressure')
+  const [vitals, setVitals] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState(emptyForm)
 
-  const data = [
-    { name: 'Jan', bp: 120, sugar: 90, hr: 75 },
-    { name: 'Feb', bp: 122, sugar: 95, hr: 78 },
-    { name: 'Mar', bp: 118, sugar: 88, hr: 72 },
-    { name: 'Apr', bp: 125, sugar: 105, hr: 80 },
-    { name: 'May', bp: 123, sugar: 100, hr: 76 },
-  ];
+  const loadVitals = async () => {
+    try {
+      const result = await getVitals()
+      const raw = Array.isArray(result) ? result : result?.data || []
+      setVitals(raw.map(mapVitalsView).sort((a, b) => new Date(a.recordedDate) - new Date(b.recordedDate)))
+    } catch {
+      toast.danger('Failed to load vitals data.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadVitals()
+  }, [])
+
+  const latest = vitals[vitals.length - 1]
+
+  const trendData = useMemo(
+    () =>
+      vitals.map((item) => ({
+        name: format(new Date(item.recordedDate), 'MMM'),
+        bp: item.systolic || 0,
+        sugar: Number(item.bloodSugar || 0),
+        hr: item.heartRate || 0,
+      })),
+    [vitals],
+  )
+
+  const currentDataKey =
+    activeTab === 'Blood Pressure' ? 'bp' : activeTab === 'Blood Sugar' ? 'sugar' : 'hr'
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (!form.recordedDate) {
+      toast.info('Please select a date.')
+      return
+    }
+
+    const payload = {
+      recordedDate: form.recordedDate,
+      systolic: form.systolic ? Number(form.systolic) : null,
+      diastolic: form.diastolic ? Number(form.diastolic) : null,
+      bloodSugar: form.bloodSugar ? Number(form.bloodSugar) : null,
+      heartRate: form.heartRate ? Number(form.heartRate) : null,
+      notes: form.notes || null,
+    }
+
+    try {
+      const created = await logVitals(payload)
+      const createdItem = created?.data ? created.data : created
+      setVitals((prev) => [...prev, mapVitalsView(createdItem || payload)])
+      setForm(emptyForm)
+      toast.success('Vitals logged.')
+    } catch {
+      toast.danger('Failed to log vitals.')
+    }
+  }
 
   return (
     <motion.div
@@ -21,120 +90,127 @@ const VitalsPage = () => {
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className="pb-6"
     >
-      <div className="px-4 pt-12 pb-2 flex justify-between items-start">
-          <div>
-              <h1 className="text-[#E8EDF2] text-[1.75rem] font-bold tracking-tight">Vitals</h1>
-              <p className="text-[#4A6070] text-sm font-normal mt-0.5">Health measurements</p>
+      <div className="px-4 pt-12">
+        <h1 className="text-[1.9rem] font-bold tracking-tight text-[#E8EDF2]">Vitals</h1>
+        <p className="text-sm text-[#6E879B]">Health measurements</p>
+      </div>
+
+      {loading ? (
+        <div className="mx-4 mt-8 flex items-center justify-center rounded-xl border border-[#1E2D3D] bg-[#111720] py-10">
+          <Loader2 className="h-6 w-6 animate-spin text-[#00D4AA]" />
+        </div>
+      ) : (
+        <>
+          <div className="mx-4 mt-4 flex items-stretch rounded-xl border border-[#1E2D3D] bg-[#111720] p-5">
+            <div className="flex-1 text-center">
+              <p className="font-mono text-4xl font-light text-[#E8EDF2]">{latest?.bloodPressureLabel || '—'}</p>
+              <p className="mt-1 text-xs uppercase tracking-widest text-[#4A6070]">mmHg</p>
+            </div>
+            <div className="mx-2 h-16 w-px bg-[#1E2D3D]" />
+            <div className="flex-1 text-center">
+              <p className="font-mono text-4xl font-light text-[#E8EDF2]">{latest?.bloodSugar ?? '—'}</p>
+              <p className="mt-1 text-xs uppercase tracking-widest text-[#4A6070]">mg/dL</p>
+            </div>
+            <div className="mx-2 h-16 w-px bg-[#1E2D3D]" />
+            <div className="flex-1 text-center">
+              <p className="font-mono text-4xl font-light text-[#E8EDF2]">{latest?.heartRate ?? '—'}</p>
+              <p className="mt-1 text-xs uppercase tracking-widest text-[#4A6070]">bpm</p>
+            </div>
           </div>
-          <button className="bg-[#00D4AA] text-[#0A0E13] text-sm font-semibold px-4 py-2 rounded-lg press">
-              + Log
-          </button>
-      </div>
 
-      <div className="mx-4 mt-4 bg-[#111720] border border-[#1E2D3D] border-t-[#00D4AA33] border-t rounded-xl p-5 shadow-[inset_0_1px_0_#00D4AA20] flex items-stretch">
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <p className="font-mono text-[2.5rem] font-light text-[#E8EDF2] leading-none tracking-tight">120/80</p>
-            <p className="font-mono text-[#4A6070] text-xs mt-1.5 tracking-widest uppercase">mmHg</p>
-            <p className="text-[#00D4AA] text-xs font-medium mt-1">● Normal</p>
-        </div>
-        
-        <div className="w-px bg-[#1E2D3D] self-center h-16 mx-2"></div>
-        
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <p className="font-mono text-[2.5rem] font-light text-[#E8EDF2] leading-none tracking-tight">98</p>
-            <p className="font-mono text-[#4A6070] text-xs mt-1.5 tracking-widest uppercase">mg/dL</p>
-            <p className="text-[#00D4AA] text-xs font-medium mt-1">● Normal</p>
-        </div>
-
-        <div className="w-px bg-[#1E2D3D] self-center h-16 mx-2"></div>
-
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <p className="font-mono text-[2.5rem] font-light text-[#E8EDF2] leading-none tracking-tight">72</p>
-            <p className="font-mono text-[#4A6070] text-xs mt-1.5 tracking-widest uppercase">bpm</p>
-            <p className="text-[#00D4AA] text-xs font-medium mt-1">● Normal</p>
-        </div>
-      </div>
-
-      <div className="mx-4 mt-3 bg-[#111720] border border-[#1E2D3D] rounded-xl p-4">
-          <h2 className="text-[#E8EDF2] text-sm font-semibold mb-3 font-sans">Trend Overview</h2>
-          <div className="bg-[#18222E] rounded-lg p-1 flex gap-1 mb-4">
-              {['Blood Pressure', 'Blood Sugar', 'Heart Rate'].map(tab => (
-                 <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`flex-1 text-xs py-1.5 rounded-md transition-colors ${activeTab === tab ? 'bg-[#00D4AA] text-[#0A0E13] font-semibold' : 'text-[#7A8FA6] font-sans'}`}
-                 >
-                    {tab}
-                 </button>
+          <div className="mx-4 mt-3 rounded-xl border border-[#1E2D3D] bg-[#111720] p-4">
+            <h2 className="mb-3 text-sm font-semibold text-[#E8EDF2]">Trend Overview</h2>
+            <div className="mb-4 flex gap-1 rounded-lg bg-[#18222E] p-1">
+              {TABS.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 rounded-md py-1.5 text-xs transition ${
+                    activeTab === tab ? 'bg-[#00D4AA] font-semibold text-[#0A0E13]' : 'text-[#7A8FA6]'
+                  }`}
+                >
+                  {tab}
+                </button>
               ))}
+            </div>
+            <div className="h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData} margin={{ top: 10, right: 4, left: -24, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="vitalsGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#00D4AA" stopOpacity="0.18" />
+                      <stop offset="100%" stopColor="#00D4AA" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1E2D3D" vertical={false} />
+                  <XAxis dataKey="name" stroke="#3D5166" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#3D5166" fontSize={11} tickLine={false} axisLine={false} />
+                  <Area
+                    type="monotone"
+                    dataKey={currentDataKey}
+                    stroke="#00D4AA"
+                    strokeWidth={2}
+                    fill="url(#vitalsGrad)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="h-[200px] w-full mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-               <AreaChart data={data} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
-                 <defs>
-                   <linearGradient id="vitalsGrad" x1="0" y1="0" x2="0" y2="1">
-                     <stop offset="0%" stopColor="#00D4AA" stopOpacity="0.15"/>
-                     <stop offset="100%" stopColor="#00D4AA" stopOpacity="0"/>
-                   </linearGradient>
-                 </defs>
-                 <CartesianGrid strokeDasharray="3 3" stroke="#1E2D3D" vertical={false}/>
-                 <XAxis dataKey="name" stroke="#3D5166" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-                 <YAxis stroke="#3D5166" fontSize={11} tickLine={false} axisLine={false} />
-                 <Area 
-                    type="monotone" 
-                    dataKey={activeTab === 'Blood Pressure' ? 'bp' : activeTab === 'Blood Sugar' ? 'sugar' : 'hr'} 
-                    stroke="#00D4AA" 
-                    strokeWidth={2} 
-                    fill="url(#vitalsGrad)" 
-                    activeDot={{ r: 4, fill: '#0A0E13', stroke: '#00D4AA', strokeWidth: 2 }}
-                 />
-               </AreaChart>
-            </ResponsiveContainer>
-          </div>
-      </div>
 
-      <div className="mx-4 mt-3 mb-10 bg-[#111720] border border-[#1E2D3D] rounded-xl p-4">
-         <h2 className="text-[#E8EDF2] text-sm font-semibold mb-3 font-sans">Log Today's Vitals</h2>
-         <div className="flex flex-col gap-3">
-             <div className="relative">
-                 <input 
-                    type="date" 
-                    className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors" 
-                 />
-             </div>
-             <div className="grid grid-cols-2 gap-3">
-                <input 
-                    type="number" 
-                    placeholder="Systolic (120)" 
-                    className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors" 
+          <form onSubmit={handleSubmit} className="mx-4 mb-10 mt-3 rounded-xl border border-[#1E2D3D] bg-[#111720] p-4">
+            <h2 className="mb-3 text-sm font-semibold text-[#E8EDF2]">Log Today's Vitals</h2>
+            <div className="space-y-3">
+              <input
+                type="date"
+                value={form.recordedDate}
+                onChange={(e) => setForm((prev) => ({ ...prev, recordedDate: e.target.value }))}
+                className="w-full rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] outline-none"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="number"
+                  value={form.systolic}
+                  onChange={(e) => setForm((prev) => ({ ...prev, systolic: e.target.value }))}
+                  placeholder="Systolic (120)"
+                  className="rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none"
                 />
-                <input 
-                    type="number" 
-                    placeholder="Diastolic (80)" 
-                    className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors" 
+                <input
+                  type="number"
+                  value={form.diastolic}
+                  onChange={(e) => setForm((prev) => ({ ...prev, diastolic: e.target.value }))}
+                  placeholder="Diastolic (80)"
+                  className="rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none"
                 />
-                <input 
-                    type="number" 
-                    placeholder="Blood Sugar" 
-                    className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors" 
+                <input
+                  type="number"
+                  value={form.bloodSugar}
+                  onChange={(e) => setForm((prev) => ({ ...prev, bloodSugar: e.target.value }))}
+                  placeholder="Blood Sugar"
+                  className="rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none"
                 />
-                <input 
-                    type="number" 
-                    placeholder="Heart Rate" 
-                    className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors" 
+                <input
+                  type="number"
+                  value={form.heartRate}
+                  onChange={(e) => setForm((prev) => ({ ...prev, heartRate: e.target.value }))}
+                  placeholder="Heart Rate"
+                  className="rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none"
                 />
-             </div>
-             <textarea 
-                placeholder="Notes (optional)" 
-                className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors min-h-[80px] resize-none mt-1"
-             />
-             <button className="w-full bg-[#00D4AA] text-[#0A0E13] font-semibold py-3 rounded-lg mt-1 press">
-                 Log Vitals
-             </button>
-         </div>
-      </div>
+              </div>
+              <textarea
+                value={form.notes}
+                onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+                placeholder="Notes (optional)"
+                className="min-h-[90px] w-full resize-none rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none"
+              />
+              <button type="submit" className="w-full rounded-lg bg-[#00D4AA] py-3 text-sm font-semibold text-[#0A0E13]">
+                Log Vitals
+              </button>
+            </div>
+          </form>
+        </>
+      )}
     </motion.div>
-  );
-};
+  )
+}
 
-export default VitalsPage;
+export default VitalsPage

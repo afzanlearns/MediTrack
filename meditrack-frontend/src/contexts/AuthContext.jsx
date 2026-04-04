@@ -1,102 +1,124 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import axiosInstance from '../api/axiosInstance'
+import { syncService } from '../services/syncService'
+import { toast } from '../utils/toast'
 
-import { syncService } from '../services/syncService';
+const AuthContext = createContext()
 
-const AuthContext = createContext();
+const GOOGLE_PLACEHOLDER = 'YOUR_GOOGLE_CLIENT_ID'
+const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
+const googleConfigured = Boolean(googleClientId && googleClientId !== GOOGLE_PLACEHOLDER)
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('meditrack_token'));
-  const [isGuest, setIsGuest] = useState(localStorage.getItem('meditrack_guest') === 'true');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isReady, setIsReady] = useState(false);
+  const [user, setUser] = useState(null)
+  const [token, setToken] = useState(localStorage.getItem('meditrack_token'))
+  const [isGuest, setIsGuest] = useState(localStorage.getItem('meditrack_guest') === 'true')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = localStorage.getItem('meditrack_token');
-      if (storedToken) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-        try {
-          const res = await axios.get('http://localhost:8080/api/auth/me');
-          setUser(res.data);
-          setToken(storedToken);
-          setIsGuest(false);
-        } catch (err) {
-          localStorage.removeItem('meditrack_token');
-          setToken(null);
-          delete axios.defaults.headers.common['Authorization'];
-          // Fallback to guest if token expired but guest flag was set
-          const storedGuest = localStorage.getItem('meditrack_guest');
-          setIsGuest(storedGuest === 'true');
-        }
-      } else {
-        const storedGuest = localStorage.getItem('meditrack_guest');
-        setIsGuest(storedGuest === 'true');
+      const storedToken = localStorage.getItem('meditrack_token')
+      if (!storedToken) {
+        setIsGuest(localStorage.getItem('meditrack_guest') === 'true')
+        setIsLoading(false)
+        setIsReady(true)
+        return
       }
-      setIsLoading(false);
-      setIsReady(true);
-    };
-    initAuth();
-  }, []);
+
+      try {
+        const res = await axiosInstance.get('/auth/me')
+        setUser(res.data)
+        setToken(storedToken)
+        setIsGuest(false)
+      } catch {
+        localStorage.removeItem('meditrack_token')
+        setToken(null)
+        setIsGuest(localStorage.getItem('meditrack_guest') === 'true')
+      } finally {
+        setIsLoading(false)
+        setIsReady(true)
+      }
+    }
+
+    initAuth()
+  }, [])
 
   const enterGuestMode = () => {
-    localStorage.setItem('meditrack_guest', 'true');
-    setIsGuest(true);
-    setUser(null);
-    setToken(null);
-  };
+    localStorage.removeItem('meditrack_token')
+    localStorage.setItem('meditrack_guest', 'true')
+    setIsGuest(true)
+    setUser(null)
+    setToken(null)
+  }
 
   const login = async (credential) => {
-    const wasGuest = isGuest;
+    const wasGuest = isGuest
     try {
-      const res = await axios.post('http://localhost:8080/api/auth/google', { credential });
-      const { token: newToken, user: newUser } = res.data;
-      
-      localStorage.setItem('meditrack_token', newToken);
-      localStorage.removeItem('meditrack_guest');
-      
-      setToken(newToken);
-      setUser(newUser);
-      setIsGuest(false);
-      
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
+      const res = await axiosInstance.post('/auth/google', { credential })
+      const { token: newToken, user: newUser } = res.data
+
+      localStorage.setItem('meditrack_token', newToken)
+      localStorage.removeItem('meditrack_guest')
+
+      setToken(newToken)
+      setUser(newUser)
+      setIsGuest(false)
+
       if (wasGuest) {
-        await syncService.syncGuestDataToServer(newToken);
+        try {
+          const syncResult = await syncService.syncGuestDataToServer(newToken)
+          if (syncResult.failCount > 0) {
+            toast.info(
+              `Signed in. Synced ${syncResult.successCount} items, ${syncResult.failCount} failed.`,
+            )
+          } else if (syncResult.successCount > 0) {
+            toast.success(`Signed in and synced ${syncResult.successCount} guest records.`)
+          } else {
+            toast.success('Signed in successfully.')
+          }
+        } catch {
+          toast.info('Signed in, but guest data sync was partial.')
+        }
+      } else {
+        toast.success('Signed in successfully.')
       }
-      
-      return true;
+
+      return true
     } catch (err) {
-      console.error('Login failed', err);
-      return false;
+      console.error('Login failed', err)
+      toast.danger('Sign in failed. Please try again.')
+      return false
     }
-  };
+  }
 
   const logout = () => {
-    localStorage.removeItem('meditrack_token');
-    localStorage.removeItem('meditrack_guest');
-    setToken(null);
-    setUser(null);
-    setIsGuest(false);
-    delete axios.defaults.headers.common['Authorization'];
-  };
+    localStorage.removeItem('meditrack_token')
+    localStorage.removeItem('meditrack_guest')
+    setToken(null)
+    setUser(null)
+    setIsGuest(false)
+    toast.info('Signed out.')
+  }
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      token, 
-      isLoading, 
-      isReady,
-      isAuthenticated: !!user, 
-      isGuest,
-      enterGuestMode,
-      login, 
-      logout 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isLoading,
+        isReady,
+        isAuthenticated: !!user,
+        isGuest,
+        googleConfigured,
+        enterGuestMode,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext)
