@@ -7,7 +7,7 @@ const SEVERITY_COLOR = (s) => {
 export default function RecentSymptomsWidget({ symptoms }) {
   if (!symptoms || symptoms.length === 0) {
     return (
-      <div className="text-center py-6 text-gray-400">
+      <div className="text-center py-6 text-text-secondary">
         <p className="text-2xl mb-1">📋</p>
         <p className="text-sm">No symptoms logged yet.</p>
       </div>
@@ -19,8 +19,8 @@ export default function RecentSymptomsWidget({ symptoms }) {
       {symptoms.map(s => (
         <li key={s.id} className="flex items-center justify-between text-sm">
           <div>
-            <span className="font-medium text-gray-800">{s.symptomName}</span>
-            <span className="text-gray-400 ml-2 text-xs">
+            <span className="font-medium text-text-secondary">{s.symptomName}</span>
+            <span className="text-text-secondary ml-2 text-xs">
               {new Date(s.symptomDate).toLocaleDateString()}
             </span>
           </div>

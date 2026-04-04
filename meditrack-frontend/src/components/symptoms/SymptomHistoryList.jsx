@@ -19,37 +19,37 @@ export default function SymptomHistoryList({ symptoms, onDeleted }) {
 
   if (!symptoms || symptoms.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-text-secondary">
         <p className="text-sm">No symptom entries match your filters.</p>
       </div>
     )
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200">
+    <div className="overflow-x-auto rounded-xl border border-bg-border">
       <table className="min-w-full divide-y divide-gray-200 text-sm">
-        <thead className="bg-gray-50">
+        <thead className="bg-bg-elevated">
           <tr>
             {['Date', 'Symptom', 'Severity', 'Notes', ''].map(h => (
-              <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wide">
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-100">
+        <tbody className="bg-bg-surface divide-y divide-gray-100">
           {symptoms.map(s => (
-            <tr key={s.id} className="hover:bg-gray-50">
-              <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+            <tr key={s.id} className="hover:bg-bg-elevated">
+              <td className="px-4 py-3 text-text-muted whitespace-nowrap">
                 {new Date(s.symptomDate).toLocaleDateString()}
               </td>
-              <td className="px-4 py-3 font-medium text-gray-800">{s.symptomName}</td>
+              <td className="px-4 py-3 font-medium text-text-secondary">{s.symptomName}</td>
               <td className="px-4 py-3">
                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${SEV_COLOR(s.severity)}`}>
                   {s.severity}/10
                 </span>
               </td>
-              <td className="px-4 py-3 text-gray-500 max-w-xs truncate">{s.notes || '—'}</td>
+              <td className="px-4 py-3 text-text-muted max-w-xs truncate">{s.notes || '—'}</td>
               <td className="px-4 py-3">
                 <button
                   onClick={() => handleDelete(s.id)}

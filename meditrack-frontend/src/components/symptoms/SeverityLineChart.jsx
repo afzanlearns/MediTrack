@@ -10,7 +10,7 @@ import {
 export default function SeverityLineChart({ symptoms }) {
   if (!symptoms || symptoms.length === 0) {
     return (
-      <div className="flex items-center justify-center h-40 text-gray-400">
+      <div className="flex items-center justify-center h-40 text-text-secondary">
         <div className="text-center">
           <p className="text-2xl mb-1">📈</p>
           <p className="text-sm">No data to display. Log some symptoms first.</p>

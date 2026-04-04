@@ -36,10 +36,10 @@ export default function AdherenceRingChart({ percentage }) {
         </ResponsiveContainer>
         {/* Centre label */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-bold text-gray-800">{pct}%</span>
+          <span className="text-2xl font-bold text-text-secondary">{pct}%</span>
         </div>
       </div>
-      <p className="mt-2 text-sm font-medium text-gray-600">30-day adherence</p>
+      <p className="mt-2 text-sm font-medium text-text-secondary">30-day adherence</p>
     </div>
   )
 }

@@ -10,10 +10,10 @@ export default function VisitCard({ visit, onEdit, onDelete }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-bg-surface rounded-xl border border-bg-border overflow-hidden">
       {/* Header row */}
       <div
-        className="flex items-start justify-between p-4 cursor-pointer hover:bg-gray-50"
+        className="flex items-start justify-between p-4 cursor-pointer hover:bg-bg-elevated"
         onClick={() => setExpanded(v => !v)}
       >
         <div className="flex items-start gap-3">
@@ -21,14 +21,14 @@ export default function VisitCard({ visit, onEdit, onDelete }) {
             🩺
           </div>
           <div>
-            <p className="font-semibold text-gray-800">Dr. {visit.doctorName}</p>
-            <p className="text-xs text-gray-500">
+            <p className="font-semibold text-text-secondary">Dr. {visit.doctorName}</p>
+            <p className="text-xs text-text-muted">
               {new Date(visit.visitDate).toLocaleDateString([], {
                 year: 'numeric', month: 'long', day: 'numeric',
               })}
             </p>
             {visit.diagnosis && (
-              <p className="text-xs text-gray-600 mt-0.5">
+              <p className="text-xs text-text-secondary mt-0.5">
                 <span className="font-medium">Dx:</span> {visit.diagnosis}
               </p>
             )}
@@ -48,22 +48,22 @@ export default function VisitCard({ visit, onEdit, onDelete }) {
           >
             Delete
           </button>
-          <span className="text-gray-400 text-sm">{expanded ? '▲' : '▼'}</span>
+          <span className="text-text-secondary text-sm">{expanded ? '▲' : '▼'}</span>
         </div>
       </div>
 
       {/* Expanded details */}
       {expanded && (
-        <div className="px-4 pb-4 pt-1 border-t border-gray-100 bg-gray-50 space-y-3">
+        <div className="px-4 pb-4 pt-1 border-t border-bg-border bg-bg-elevated space-y-3">
           {visit.notes && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Notes</p>
-              <p className="text-sm text-gray-700 mt-0.5">{visit.notes}</p>
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">Notes</p>
+              <p className="text-sm text-text-secondary mt-0.5">{visit.notes}</p>
             </div>
           )}
 
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Medications</p>
+            <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">Medications</p>
             {visit.medications && visit.medications.length > 0 ? (
               <div className="flex flex-wrap gap-2 mt-1">
                 {visit.medications.map(m => (
@@ -76,7 +76,7 @@ export default function VisitCard({ visit, onEdit, onDelete }) {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-gray-400 mt-1">No medications linked.</p>
+              <p className="text-xs text-text-secondary mt-1">No medications linked.</p>
             )}
           </div>
         </div>

@@ -34,20 +34,20 @@ export default function AddSymptomForm({ onSave }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h3 className="text-sm font-semibold text-gray-700 mb-4">Log a Symptom</h3>
+    <div className="bg-bg-surface rounded-xl border border-bg-border p-5">
+      <h3 className="text-sm font-semibold text-text-secondary mb-4">Log a Symptom</h3>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Symptom name */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Symptom Name</label>
+          <label className="block text-xs font-medium text-text-secondary mb-1">Symptom Name</label>
           <input
             type="text"
             value={form.symptomName}
             onChange={e => setForm(f => ({ ...f, symptomName: e.target.value }))}
             placeholder="e.g. Headache, Nausea"
             className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.symptomName ? 'border-red-400' : 'border-gray-300'
+              errors.symptomName ? 'border-red-400' : 'border-bg-border'
             }`}
           />
           {errors.symptomName && <p className="text-xs text-red-500 mt-1">{errors.symptomName}</p>}
@@ -55,13 +55,13 @@ export default function AddSymptomForm({ onSave }) {
 
         {/* Date */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+          <label className="block text-xs font-medium text-text-secondary mb-1">Date</label>
           <input
             type="date"
             value={form.symptomDate}
             onChange={e => setForm(f => ({ ...f, symptomDate: e.target.value }))}
             className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.symptomDate ? 'border-red-400' : 'border-gray-300'
+              errors.symptomDate ? 'border-red-400' : 'border-bg-border'
             }`}
           />
           {errors.symptomDate && <p className="text-xs text-red-500 mt-1">{errors.symptomDate}</p>}
@@ -69,7 +69,7 @@ export default function AddSymptomForm({ onSave }) {
 
         {/* Severity slider */}
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label className="block text-xs font-medium text-text-secondary mb-1">
             Severity — <span className="text-blue-600 font-bold">{form.severity}/10</span>
           </label>
           <input
@@ -79,7 +79,7 @@ export default function AddSymptomForm({ onSave }) {
             onChange={e => setForm(f => ({ ...f, severity: e.target.value }))}
             className="w-full accent-blue-600"
           />
-          <div className="flex justify-between text-xs text-gray-400 mt-0.5">
+          <div className="flex justify-between text-xs text-text-secondary mt-0.5">
             <span>1 (Mild)</span><span>10 (Severe)</span>
           </div>
           {errors.severity && <p className="text-xs text-red-500 mt-1">{errors.severity}</p>}
@@ -87,13 +87,13 @@ export default function AddSymptomForm({ onSave }) {
 
         {/* Notes */}
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Notes (optional)</label>
+          <label className="block text-xs font-medium text-text-secondary mb-1">Notes (optional)</label>
           <textarea
             value={form.notes}
             onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
             rows={2}
             placeholder="Any additional context..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-bg-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>

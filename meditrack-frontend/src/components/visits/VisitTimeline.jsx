@@ -3,7 +3,7 @@ import VisitCard from './VisitCard.jsx'
 export default function VisitTimeline({ visits, onEdit, onDelete }) {
   if (!visits || visits.length === 0) {
     return (
-      <div className="text-center py-16 text-gray-400">
+      <div className="text-center py-16 text-text-secondary">
         <p className="text-4xl mb-3">🩺</p>
         <p className="text-base font-medium">No doctor visits recorded yet.</p>
         <p className="text-sm mt-1">Click "Add Visit" to log your first appointment.</p>
@@ -14,7 +14,7 @@ export default function VisitTimeline({ visits, onEdit, onDelete }) {
   return (
     <div className="relative">
       {/* Vertical timeline line */}
-      <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200 -z-0" />
+      <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-bg-elevated -z-0" />
 
       <div className="space-y-4 relative">
         {visits.map(visit => (

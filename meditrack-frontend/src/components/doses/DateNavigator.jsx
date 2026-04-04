@@ -14,7 +14,7 @@ export default function DateNavigator({ date, onChange }) {
     <div className="flex items-center gap-3">
       <button
         onClick={() => shift(-1)}
-        className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 font-bold"
+        className="p-2 rounded-lg hover:bg-bg-elevated text-text-secondary font-bold"
       >
         ‹
       </button>
@@ -23,12 +23,12 @@ export default function DateNavigator({ date, onChange }) {
         type="date"
         value={date}
         onChange={e => onChange(e.target.value)}
-        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="px-3 py-2 border border-bg-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
 
       <button
         onClick={() => shift(1)}
-        className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 font-bold"
+        className="p-2 rounded-lg hover:bg-bg-elevated text-text-secondary font-bold"
       >
         ›
       </button>

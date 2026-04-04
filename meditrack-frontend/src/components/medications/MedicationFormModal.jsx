@@ -62,13 +62,13 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
 
   const field = (label, key, type = 'text', extra = {}) => (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
       <input
         type={type}
         value={form[key]}
         onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
         className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          errors[key] ? 'border-red-400' : 'border-gray-300'
+          errors[key] ? 'border-red-400' : 'border-bg-border'
         }`}
         {...extra}
       />
@@ -83,11 +83,11 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
         {field('Dosage', 'dosage', 'text', { placeholder: 'e.g. 500mg' })}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+          <label className="block text-sm font-medium text-text-secondary mb-1">Frequency</label>
           <select
             value={form.frequency}
             onChange={e => setForm(f => ({ ...f, frequency: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-bg-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {FREQUENCIES.map(f => (
               <option key={f.value} value={f.value}>{f.label}</option>
@@ -99,12 +99,12 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
         {field('End Date (optional)', 'endDate', 'date')}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+          <label className="block text-sm font-medium text-text-secondary mb-1">Notes (optional)</label>
           <textarea
             value={form.notes}
             onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-bg-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Any additional notes..."
           />
         </div>
@@ -112,7 +112,7 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
         <div className="flex justify-end gap-3 pt-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 text-sm text-text-secondary border border-bg-border rounded-lg hover:bg-bg-elevated"
           >
             Cancel
           </button>

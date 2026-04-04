@@ -3,7 +3,7 @@ import DoseCard from '../shared/DoseCard.jsx'
 export default function TodaysDoseList({ doses, onStatusChange }) {
   if (!doses || doses.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-text-secondary">
         <p className="text-3xl mb-2">💊</p>
         <p className="text-sm">No doses scheduled for today.</p>
         <p className="text-xs mt-1">Add a medication to get started.</p>

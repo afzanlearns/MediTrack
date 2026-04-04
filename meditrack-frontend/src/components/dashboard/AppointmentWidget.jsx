@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom';
 export default function AppointmentWidget({ appointment }) {
   if (!appointment) {
     return (
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full flex flex-col justify-center items-center text-center">
-        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-2xl mb-3">📅</div>
-        <h3 className="font-bold text-gray-900">No appointments</h3>
-        <p className="text-gray-400 text-xs mt-1 mb-4">You have no upcoming medical visits.</p>
+      <div className="bg-bg-surface p-6 rounded-xl shadow-sm border border-bg-border h-full flex flex-col justify-center items-center text-center">
+        <div className="w-12 h-12 bg-bg-elevated rounded-full flex items-center justify-center text-2xl mb-3">📅</div>
+        <h3 className="font-bold text-text-secondary">No appointments</h3>
+        <p className="text-text-secondary text-xs mt-1 mb-4">You have no upcoming medical visits.</p>
         <Link to="/appointments" className="text-blue-600 text-xs font-bold hover:underline">Schedule one →</Link>
       </div>
     );
@@ -21,11 +21,11 @@ export default function AppointmentWidget({ appointment }) {
   };
 
   return (
-    <div className={`p-6 rounded-2xl shadow-sm border h-full transition-all ${
-      isUrgent() ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-100'
+    <div className={`p-6 rounded-xl shadow-sm border h-full transition-all ${
+      isUrgent() ? 'bg-amber-50 border-amber-200' : 'bg-bg-surface border-bg-border'
     }`}>
       <div className="flex justify-between items-start mb-4">
-        <h3 className="font-bold text-gray-900">Next Appointment</h3>
+        <h3 className="font-bold text-text-secondary">Next Appointment</h3>
         <Link to="/appointments" className="text-blue-600 text-xs font-bold hover:underline">View All</Link>
       </div>
       
@@ -37,8 +37,8 @@ export default function AppointmentWidget({ appointment }) {
           <span className="text-xl font-bold leading-none mt-1">{format(new Date(appointment.appointmentDate), 'dd')}</span>
         </div>
         <div className="min-w-0">
-          <p className="font-bold text-gray-900 truncate">{appointment.doctorName}</p>
-          <p className="text-xs text-gray-500 truncate">{appointment.reason || 'Medical Checkup'}</p>
+          <p className="font-bold text-text-secondary truncate">{appointment.doctorName}</p>
+          <p className="text-xs text-text-muted truncate">{appointment.reason || 'Medical Checkup'}</p>
         </div>
       </div>
       
