@@ -72,7 +72,7 @@ const LoginPage = () => {
       </div>
 
       {/* Right Panel */}
-      <div className="flex-1 flex items-center justify-center bg-white p-8">
+      <div className="flex-1 flex items-center justify-center bg-bg-surface p-8">
         <div className="max-w-sm w-full">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-text-primary">Welcome back</h2>
@@ -92,7 +92,7 @@ const LoginPage = () => {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-text-secondary">or</span>
+              <span className="bg-bg-surface px-2 text-text-secondary">or</span>
             </div>
           </div>
 

@@ -110,7 +110,7 @@ const PrescriptionsPage = ({ showToast }) => {
             <div className="space-y-1">
               <label className="text-sm font-medium text-text-primary">Notes</label>
               <textarea
-                className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-white min-h-[90px]"
+                className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-bg-surface min-h-[90px]"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
@@ -151,13 +151,13 @@ const PrescriptionsPage = ({ showToast }) => {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleDownload(doc.id)}
-                        className="w-8 h-8 rounded-md border border-border bg-white text-text-secondary hover:text-text-primary"
+                        className="w-8 h-8 rounded-md border border-border bg-bg-surface text-text-secondary hover:text-text-primary"
                       >
                         <Download className="w-4 h-4 mx-auto" />
                       </button>
                       <button
                         onClick={() => handleDelete(doc.id)}
-                        className="w-8 h-8 rounded-md border border-border bg-white text-text-secondary hover:text-danger"
+                        className="w-8 h-8 rounded-md border border-border bg-bg-surface text-text-secondary hover:text-danger"
                       >
                         <Trash2 className="w-4 h-4 mx-auto" />
                       </button>

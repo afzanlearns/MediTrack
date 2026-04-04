@@ -1,208 +1,104 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { format } from 'date-fns';
-import { Thermometer, Plus, Trash2, BarChart3 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import PageHeader from '../components/ui/PageHeader';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import Badge from '../components/ui/Badge';
-import Table from '../components/ui/Table';
-import EmptyState from '../components/ui/EmptyState';
-import axios from 'axios';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import PageHeader from '../components/shell/PageHeader';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { Thermometer, Trash2 } from 'lucide-react';
 
-const SymptomsPage = ({ showToast }) => {
-  const [symptoms, setSymptoms] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    name: '',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    severity: 5,
-    notes: '',
-  });
+const SymptomsPage = () => {
+  const [severity, setSeverity] = useState(5);
+  const [symptoms, setSymptoms] = useState([
+    { name: 'Headache', date: '2023-04-01', severity: 4 },
+    { name: 'Nausea', date: '2023-04-01', severity: 6 },
+    { name: 'Fatigue', date: '2023-03-31', severity: 8 },
+  ]);
 
-  useEffect(() => {
-    fetchSymptoms();
-  }, []);
-
-  const fetchSymptoms = async () => {
-    try {
-      const res = await axios.get('http://localhost:8080/api/symptoms');
-      setSymptoms(res.data || []);
-    } catch {
-      showToast('Failed to load symptoms', 'danger');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogSymptom = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post('http://localhost:8080/api/symptoms', formData);
-      showToast('Symptom logged');
-      setFormData({
-        name: '',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        severity: 5,
-        notes: '',
-      });
-      fetchSymptoms();
-    } catch {
-      showToast('Failed to log symptom', 'danger');
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:8080/api/symptoms/${id}`);
-      showToast('Symptom removed');
-      fetchSymptoms();
-    } catch {
-      showToast('Failed to delete symptom', 'danger');
-    }
-  };
-
-  const trendData = useMemo(
-    () =>
-      [...symptoms]
-        .reverse()
-        .slice(-12)
-        .map((s) => ({
-          date: format(new Date(s.date), 'MMM d'),
-          severity: Number(s.severity || 0),
-        })),
-    [symptoms]
-  );
-
-  const severityVariant = (value) => {
-    if (value >= 7) return 'danger';
-    if (value >= 4) return 'warning';
-    return 'success';
+  const severityColor = (s) => {
+    if (s <= 3) return 'bg-pos-bg text-pos-text';
+    if (s <= 6) return 'bg-warn-bg text-warn-text';
+    return 'bg-neg-bg text-neg-text';
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Symptoms" subtitle="Log severity and monitor short-term symptom trends" />
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+    >
+      <PageHeader title="Symptoms" subtitle="Log and track patterns" />
 
-      <section className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <Card className="xl:col-span-4 p-5">
-          <h2 className="text-[20px] font-semibold text-text-primary mb-4">Log Symptom</h2>
-          <form onSubmit={handleLogSymptom} className="space-y-4">
-            <Input
-              label="Symptom"
-              icon={<Thermometer className="w-4 h-4" />}
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Headache, fatigue, nausea"
-              required
-            />
-            <Input
-              label="Date"
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              required
-            />
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-text-primary">Severity</label>
-                <Badge variant={severityVariant(formData.severity)}>Level {formData.severity}</Badge>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value={formData.severity}
-                onChange={(e) => setFormData({ ...formData, severity: Number(e.target.value) })}
-                className="w-full accent-accent"
-              />
-              <div className="flex justify-between text-xs text-text-secondary">
-                <span>Mild</span>
-                <span>Moderate</span>
-                <span>Severe</span>
-              </div>
+      <div className="mx-5 mb-4 bg-surface border border-edge rounded-xl shadow-xs overflow-hidden">
+        <h2 className="px-4 pt-4 pb-3 border-b border-edge text-sm font-bold text-ink">Log a Symptom</h2>
+        <form className="px-4 py-4 flex flex-col gap-4">
+          <input type="text" placeholder="Symptom name" className="bg-surface-2 border border-edge rounded-xl px-4 py-3.5 text-sm" />
+          <input type="date" className="bg-surface-2 border border-edge rounded-xl px-4 py-3.5 text-sm" />
+          
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <label className="text-sm font-medium text-ink">Severity</label>
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-black ${severityColor(severity)}`}>
+                {severity}/10
+              </span>
             </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-text-primary">Notes</label>
-              <textarea
-                className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-white min-h-[90px]"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Triggers, duration, and context"
-              />
-            </div>
-
-            <Button type="submit" className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Save symptom
-            </Button>
-          </form>
-        </Card>
-
-        <div className="xl:col-span-8 space-y-6">
-          <Card className="p-5">
-            <h2 className="text-[20px] font-semibold text-text-primary mb-4">Severity Trend</h2>
-            <div className="h-[220px]">
-              {trendData.length === 0 ? (
-                <EmptyState icon={BarChart3} title="No trend yet" description="Add symptom entries to generate trend insights." />
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={trendData}>
-                    <CartesianGrid stroke="#E5E7EB" vertical={false} />
-                    <XAxis dataKey="date" tick={{ fill: '#6B7280', fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} tickLine={false} axisLine={false} domain={[0, 10]} />
-                    <Tooltip />
-                    <Bar dataKey="severity" fill="#7FBF7F" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </Card>
-
-          <Card className="p-0 overflow-hidden">
-            <Table
-              loading={loading}
-              data={symptoms}
-              columns={[
-                { key: 'date', label: 'Date', render: (s) => format(new Date(s.date), 'MMM d, yyyy') },
-                { key: 'name', label: 'Symptom', render: (s) => <span className="font-medium text-text-primary">{s.name}</span> },
-                {
-                  key: 'severity',
-                  label: 'Severity',
-                  render: (s) => (
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full ${
-                          Number(s.severity) >= 7 ? 'bg-danger' : Number(s.severity) >= 4 ? 'bg-warning' : 'bg-success'
-                        }`}
-                      />
-                      <Badge variant={severityVariant(Number(s.severity))}>Level {s.severity}</Badge>
-                    </div>
-                  ),
-                },
-                { key: 'notes', label: 'Notes', render: (s) => <span className="text-sm text-text-secondary truncate block max-w-[280px]">{s.notes || 'No note'}</span> },
-                {
-                  key: 'actions',
-                  label: '',
-                  render: (s) => (
-                    <button
-                      onClick={() => handleDelete(s.id)}
-                      className="p-2 rounded-md border border-border text-text-secondary hover:text-danger hover:bg-danger-light"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  ),
-                },
-              ]}
-              emptyMessage="No symptom entries yet"
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={severity}
+              onChange={(e) => setSeverity(e.target.value)}
+              className="w-full"
             />
-          </Card>
+            <div className="flex justify-between text-[9px] text-ink-4 font-medium">
+              <span>Mild</span>
+              <span>Moderate</span>
+              <span>Severe</span>
+            </div>
+          </div>
+
+          <textarea placeholder="Notes (optional)" rows="3" className="bg-surface-2 border border-edge rounded-xl px-4 py-3.5 text-sm"></textarea>
+          <button type="submit" className="bg-brand text-white rounded-xl py-4 text-sm font-bold w-full">Log Symptom</button>
+        </form>
+      </div>
+
+      <div className="mx-5 mb-4 bg-surface border border-edge rounded-xl shadow-xs">
+        <div className="px-4 py-3.5 border-b border-edge flex justify-between">
+          <h2 className="text-sm font-bold text-ink">Severity Trend</h2>
+          <select className="text-xs text-brand border-0 bg-transparent cursor-pointer font-semibold">
+            <option>Headache</option>
+            <option>All Symptoms</option>
+          </select>
         </div>
-      </section>
-    </div>
+        <div className="px-2 py-4 h-[180px]">
+          <ResponsiveContainer width="100%" height={140}>
+            <LineChart data={symptoms.filter(s => s.name === 'Headache')}>
+              <CartesianGrid strokeDasharray="4 4" stroke="#EEEEF5" />
+              <XAxis dataKey="date" fontSize={10} fill="#ADADC4" tickLine={false} axisLine={false} />
+              <YAxis domain={[0, 10]} fontSize={10} fill="#ADADC4" tickLine={false} axisLine={false} />
+              <Line type="monotone" dataKey="severity" strokeWidth={2.5} stroke="#5B5BD6" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="mx-5 mb-24 bg-surface border border-edge rounded-xl shadow-xs overflow-hidden">
+        <h2 className="px-4 py-3.5 border-b border-edge text-sm font-bold text-ink">History</h2>
+        {symptoms.map((symptom, i) => (
+          <div key={i} className="px-4 py-3.5 flex justify-between items-center border-b border-edge last:border-0">
+            <div>
+              <p className="text-sm font-semibold text-ink">{symptom.name}</p>
+              <p className="text-xs text-ink-3">{symptom.date}</p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${severityColor(symptom.severity)}`}>
+                {symptom.severity}/10
+              </span>
+              <button>
+                <Trash2 size={14} className="text-ink-4 active:text-neg" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
   );
 };
 

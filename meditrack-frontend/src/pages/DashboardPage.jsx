@@ -1,242 +1,216 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  Pill,
-  ClipboardCheck,
-  CheckCircle2,
-  ShieldCheck,
-  Clock3,
-  CalendarDays,
-  Activity,
-  HeartPulse,
-  Droplets,
-  Thermometer,
-} from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
-import dashboardApi from '../api/dashboardApi';
-
-const vitalsFallback = [
-  { key: 'bloodPressure', label: 'Blood Pressure', value: '122/81', icon: HeartPulse },
-  { key: 'sugar', label: 'Blood Sugar', value: '108 mg/dL', icon: Droplets },
-  { key: 'heartRate', label: 'Heart Rate', value: '74 bpm', icon: Activity },
-  { key: 'temperature', label: 'Body Temp', value: '98.4 F', icon: Thermometer },
-];
-
-const scheduleFallback = [
-  { time: '08:00', medication: 'Metformin 500mg', status: 'TAKEN' },
-  { time: '13:00', medication: 'Atorvastatin 20mg', status: 'PENDING' },
-  { time: '20:00', medication: 'Vitamin D3', status: 'PENDING' },
-];
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useAuthModal } from '../contexts/AuthModalContext';
+import { Bell, Info, X, Calendar, Zap, ClipboardList, Pill, Activity, CheckCircle, Shield, Check } from 'lucide-react';
+import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 
 const DashboardPage = () => {
-  const [summary, setSummary] = useState({
-    adherence: 0,
-    pendingDoses: 0,
-    nextAppointment: null,
-    topSymptoms: [],
-    activeMedications: 4,
-    todaysDoses: 6,
-    takenToday: 4,
-    schedule: scheduleFallback,
-    recentVitals: vitalsFallback,
-  });
+  const { user, isGuest } = useAuth();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await dashboardApi.getDashboardSummary();
-        setSummary((prev) => ({
-          ...prev,
-          ...data,
-          activeMedications: data.activeMedications ?? prev.activeMedications,
-          todaysDoses: data.todaysDoses ?? prev.todaysDoses,
-          takenToday: data.takenToday ?? Math.max(0, (data.todaysDoses ?? prev.todaysDoses) - (data.pendingDoses ?? prev.pendingDoses)),
-          schedule: data.schedule?.length ? data.schedule : prev.schedule,
-          recentVitals: data.recentVitals?.length ? data.recentVitals : prev.recentVitals,
-        }));
-      } catch {
-        // Keep fallback data for guest and offline render.
-      }
-    };
-    load();
-  }, []);
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning,';
+    if (hour < 18) return 'Good afternoon,';
+    return 'Good evening,';
+  };
 
-  const adherence = Math.max(0, Math.min(100, Number(summary.adherence || 0)));
-  const ringData = useMemo(
-    () => [
-      { name: 'Adherent', value: adherence },
-      { name: 'Remaining', value: 100 - adherence },
-    ],
-    [adherence]
+  const GreetingHeader = () => (
+    <div className="px-4 pt-12 pb-6 bg-[#111720]">
+      <div className="flex justify-between items-start">
+        <div>
+          <p className="text-[#7A8FA6] text-sm font-normal tracking-wide">{getGreeting()}</p>
+          <h1 className="text-[#E8EDF2] text-[2.25rem] font-bold tracking-tight leading-none mt-0.5">{user?.fullName?.split(' ')[0] || 'there'}.</h1>
+        </div>
+        <button className="text-[#7A8FA6] active:text-[#00D4AA] transition-colors mt-2">
+          <Bell size={20} />
+        </button>
+      </div>
+      <div className="mt-3">
+        <div className="inline-flex items-center gap-1.5 bg-[#111720] border border-[#1E2D3D] px-3 py-1 rounded-full mt-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#00D4AA] animate-pulse" />
+          <span className="font-mono text-[#4A6070] text-xs tracking-wide">{format(new Date(), 'EEEE, MMM d')}</span>
+        </div>
+      </div>
+    </div>
   );
 
-  const symptomTrend = useMemo(() => {
-    if (!summary.topSymptoms?.length) {
-      return [
-        { name: 'Headache', severity: 2 },
-        { name: 'Fatigue', severity: 3 },
-        { name: 'Nausea', severity: 1 },
-      ];
-    }
-    return summary.topSymptoms.slice(0, 5).map((s) => ({
-      name: s.name,
-      severity: Number(s.severity) || 1,
-    }));
-  }, [summary.topSymptoms]);
+  const GuestBanner = () => {
+    const { openAuthModal } = useAuthModal();
+    const [isVisible, setIsVisible] = useState(true);
+
+    if (!isGuest || !isVisible) return null;
+
+    return (
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mx-4 mb-4 bg-[#111720] rounded-xl overflow-hidden flex border border-[#00D4AA20]">
+        <div className="w-[3px] bg-[#00D4AA] flex-shrink-0" />
+        <div className="flex-1 flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2.5">
+            <Shield size={15} strokeWidth={1.75} className="text-[#00D4AA]" />
+            <span className="text-[#7A8FA6] text-sm">Using guest mode</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <button
+                onClick={() => openAuthModal()}
+                className="bg-[#00D4AA] text-[#0A0E13] text-xs font-semibold px-3 py-1.5 rounded-lg press"
+                >
+                Sign in
+                </button>
+                <button onClick={() => setIsVisible(false)} className="text-[#3D5166] press p-1">
+                <X size={14} />
+                </button>
+            </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  const StatCard = ({ icon: Icon, value, label, accent }) => (
+    <div className={`flex-1 bg-[#111720] rounded-xl p-4 border border-[#1E2D3D] border-t-2 border-t-[${accent}] overflow-hidden`}>
+      <Icon size={15} strokeWidth={1.75} className={`text-[${accent}] mb-2`} />
+      <p className="font-mono text-[2rem] font-medium text-[#E8EDF2] leading-none mb-1">{value}</p>
+      <p className="text-[#4A6070] text-xs font-sans mt-1.5">{label}</p>
+    </div>
+  );
+
+  const DoseCard = ({ dose }) => {
+    const statusStyles = {
+      PENDING: { bg: 'bg-[#F59E0B]' },
+      TAKEN: { bg: 'bg-[#00D4AA]' },
+      MISSED: { bg: 'bg-[#EF4444]' },
+      SKIPPED: { bg: 'bg-[#1E2D3D]' },
+    };
+    const { bg } = statusStyles[dose.status] || { bg: 'bg-[#1E2D3D]' };
+
+    return (
+      <div className="mx-4 mb-2 bg-[#111720] rounded-xl overflow-hidden flex">
+        <div className={`w-[3px] flex-shrink-0 ${bg}`}></div>
+        <div className="flex-1 px-4 py-3">
+             <p className="font-mono text-[#4A6070] text-xs">{dose.time}</p>
+             <p className="font-sans font-semibold text-[#E8EDF2] text-sm mt-0.5">{dose.medication}</p>
+             <p className="font-sans text-[#4A6070] text-xs">{dose.dosage}</p>
+        </div>
+        <div className="flex items-center gap-2 pr-3">
+          {dose.status === 'PENDING' ? (
+            <>
+              <button className="bg-[#00D4AA15] text-[#00D4AA] text-xs px-2.5 py-1.5 rounded-lg font-medium active:scale-95 transition-transform">Take</button>
+              <button className="bg-[#18222E] text-[#4A6070] text-xs px-2.5 py-1.5 rounded-lg font-medium active:scale-95 transition-transform">Skip</button>
+            </>
+          ) : dose.status === 'TAKEN' ? (
+             <span className="flex items-center gap-1 bg-[#00D4AA15] text-[#00D4AA] text-xs px-2.5 py-1.5 rounded-lg font-medium">
+               <Check size={11} strokeWidth={2}/> Taken
+             </span>
+          ) : (
+            <div className={`text-xs font-medium rounded-lg px-2.5 py-1.5 ${dose.status === 'MISSED' ? 'bg-[#EF44441A] text-[#EF4444]' : 'bg-[#18222E] text-[#7A8FA6]'}`}>
+              {dose.status}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const severityColor = (s) => {
+    if (s <= 3) return 'bg-[#00D4AA0D] text-[#00D4AA] border-[#00D4AA20]'
+    if (s <= 6) return 'bg-[#F59E0B0D] text-[#F59E0B] border-[#F59E0B20]'
+    return 'bg-[#EF44440D] text-[#EF4444] border-[#EF444420]'
+  }
 
   const stats = [
-    { label: 'Active Medications', value: summary.activeMedications, icon: Pill },
-    { label: "Today's Doses", value: summary.todaysDoses, icon: ClipboardCheck },
-    { label: 'Taken Today', value: summary.takenToday, icon: CheckCircle2 },
-    { label: 'Adherence', value: `${adherence}%`, icon: ShieldCheck },
+    { icon: Pill, value: 3, label: 'Active Meds', accent: '#00D4AA' },
+    { icon: ClipboardList, value: 8, label: "Today's Doses", accent: '#3B82F6' },
+    { icon: CheckCircle, value: 2, label: 'Taken Today', accent: '#F59E0B' },
   ];
 
-  const nextAppointmentDate = summary.nextAppointment?.date || 'Nov 10, 2025';
-  const nextAppointmentDoctor = summary.nextAppointment?.doctorName || 'Dr. Sandra Perry';
+  const doses = [
+    { time: '08:00 AM', medication: 'Metformin', dosage: '500 mg', status: 'TAKEN' },
+    { time: '12:30 PM', medication: 'Lisinopril', dosage: '10 mg', status: 'PENDING' },
+    { time: '09:00 PM', medication: 'Atorvastatin', dosage: '20 mg', status: 'PENDING' },
+  ];
+  
+  const symptoms = [
+      { name: 'Headache', date: '2 hours ago', severity: 4 },
+      { name: 'Nausea', date: 'Yesterday', severity: 2 },
+  ];
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-[28px] font-semibold text-text-primary">Dashboard</h1>
-        <p className="text-sm text-text-secondary mt-1">Daily health summary with quick access to your critical records.</p>
-      </header>
+    <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+    >
+      <GreetingHeader />
+      <GuestBanner />
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {stats.map((item) => (
-          <Card key={item.label} className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-text-secondary">{item.label}</span>
-              <div className="w-8 h-8 rounded-lg bg-accent-light border border-accent/35 flex items-center justify-center">
-                <item.icon className="w-4 h-4 text-[#4B7A4B]" />
-              </div>
-            </div>
-            <p className="text-2xl font-semibold text-text-primary mt-2">{item.value}</p>
-          </Card>
-        ))}
-      </section>
+      <div className="flex mx-4 gap-3 mb-6 mt-4">
+        {/* Render stats manually for pure tailwind classes to hit the colors properly without dynamic template literals struggling in post-CSS */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0 }} className="flex-1 bg-[#111720] rounded-xl p-4 border border-[#1E2D3D] border-t-2 border-t-[#00D4AA] overflow-hidden">
+            <Pill size={15} strokeWidth={1.75} className="text-[#00D4AA] mb-2" />
+            <p className="font-mono text-[2rem] font-medium text-[#E8EDF2] leading-none mb-1">3</p>
+            <p className="text-[#4A6070] text-xs mt-1.5 font-sans">Active Meds</p>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.05 }} className="flex-1 bg-[#111720] rounded-xl p-4 border border-[#1E2D3D] border-t-2 border-t-[#3B82F6] overflow-hidden">
+            <ClipboardList size={15} strokeWidth={1.75} className="text-[#3B82F6] mb-2" />
+            <p className="font-mono text-[2rem] font-medium text-[#E8EDF2] leading-none mb-1">8</p>
+            <p className="text-[#4A6070] text-xs mt-1.5 font-sans">Today's Doses</p>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.1 }} className="flex-1 bg-[#111720] rounded-xl p-4 border border-[#1E2D3D] border-t-2 border-t-[#F59E0B] overflow-hidden">
+            <CheckCircle size={15} strokeWidth={1.75} className="text-[#F59E0B] mb-2" />
+            <p className="font-mono text-[2rem] font-medium text-[#E8EDF2] leading-none mb-1">2</p>
+            <p className="text-[#4A6070] text-xs mt-1.5 font-sans">Taken Today</p>
+        </motion.div>
+      </div>
 
-      <section className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <div className="xl:col-span-8 space-y-6">
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[20px] font-semibold text-text-primary">Today&apos;s Schedule</h2>
-              <Link to="/dose-log" className="text-sm text-[#4B7A4B] font-medium">View dose log</Link>
-            </div>
-            <div className="space-y-4">
-              {summary.schedule.map((item, index) => (
-                <div key={`${item.time}-${index}`} className="flex items-start gap-4">
-                  <div className="w-16 text-sm font-medium text-text-secondary pt-1">{item.time}</div>
-                  <div className="flex-1 rounded-lg border border-border bg-page-bg/45 p-3 flex items-center justify-between gap-3">
+      <div className="mb-6">
+        <div className="flex justify-between items-center px-4 mb-3">
+          <h2 className="text-[#E8EDF2] text-sm font-semibold tracking-wide">Today's Schedule</h2>
+          <button className="text-[#00D4AA] text-xs font-medium cursor-pointer press">
+            Generate
+          </button>
+        </div>
+        {doses.length > 0 ? (
+          doses.map((dose, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: i * 0.05 }}>
+                  <DoseCard dose={dose} />
+              </motion.div>
+          ))
+        ) : (
+          <div className="mx-4 bg-[#111720] border border-[#1E2D3D] rounded-xl py-8 text-center">
+            <ClipboardList size={28} className="text-[#3D5166] mx-auto mb-2" />
+            <p className="text-sm font-semibold text-[#E8EDF2] mb-1">No doses today</p>
+            <p className="text-xs text-[#7A8FA6]">Add a medication to begin</p>
+          </div>
+        )}
+      </div>
+      
+      <div className="mb-8">
+        <div className="flex justify-between items-center px-4 mb-3">
+            <h2 className="text-[#E8EDF2] text-sm font-semibold tracking-wide">Recent Symptoms</h2>
+            <span className="text-[#00D4AA] text-xs font-medium cursor-pointer press" onClick={() => navigate('/symptoms')}>View all</span>
+        </div>
+        {symptoms.length > 0 ? symptoms.map((symptom, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: i * 0.05 }}>
+                <div className="mx-4 mb-2 bg-[#111720] rounded-xl px-4 py-3 flex justify-between items-center">
                     <div>
-                      <p className="text-sm font-medium text-text-primary">{item.medication}</p>
+                        <p className="text-[#E8EDF2] text-sm font-medium font-sans">{symptom.name}</p>
+                        <p className="text-[#3D5166] text-xs font-sans mt-0.5">{symptom.date}</p>
                     </div>
-                    <Badge variant={item.status === 'TAKEN' ? 'success' : item.status === 'SKIPPED' ? 'danger' : 'warning'}>
-                      {item.status === 'TAKEN' ? 'Taken' : item.status === 'SKIPPED' ? 'Missed' : 'Pending'}
-                    </Badge>
-                  </div>
+                    <span className={`font-mono text-xs px-2 py-0.5 rounded-full border ${severityColor(symptom.severity)}`}>
+                        {symptom.severity}/10
+                    </span>
                 </div>
-              ))}
-            </div>
-          </Card>
+            </motion.div>
+        )) : (
+             <div className="mx-4 bg-[#111720] rounded-xl px-4 py-5 text-center">
+                <p className="text-sm text-[#7A8FA6]">No symptoms logged recently</p>
+                <span className="text-xs text-[#00D4AA] cursor-pointer mt-2 inline-block press" onClick={() => navigate('/symptoms')}>Log a symptom</span>
+             </div>
+        )}
+      </div>
 
-          <Card className="p-5">
-            <h2 className="text-[20px] font-semibold text-text-primary mb-4">Vitals</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-              {summary.recentVitals.map((vital, index) => {
-                const Icon = vital.icon || vitalsFallback[index % vitalsFallback.length].icon;
-                return (
-                  <div key={vital.key || index} className="rounded-lg border border-border bg-page-bg/50 p-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-text-secondary uppercase tracking-[0.08em]">{vital.label}</p>
-                      <Icon className="w-4 h-4 text-[#4B7A4B]" />
-                    </div>
-                    <p className="text-lg font-semibold text-text-primary mt-2">{vital.value}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-
-          <Card className="p-5">
-            <h2 className="text-[20px] font-semibold text-text-primary mb-4">Recent Symptoms</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {symptomTrend.map((symptom) => (
-                <div key={symptom.name} className="border border-border rounded-lg p-3 bg-page-bg/45">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-text-primary">{symptom.name}</p>
-                    <span className="text-xs text-text-secondary">Severity {symptom.severity}/10</span>
-                  </div>
-                  <div className="mt-2 w-full h-2 rounded-full bg-gray-200 overflow-hidden">
-                    <div
-                      className={`h-full ${symptom.severity >= 7 ? 'bg-danger' : symptom.severity >= 4 ? 'bg-warning' : 'bg-success'}`}
-                      style={{ width: `${Math.min(100, symptom.severity * 10)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        <div className="xl:col-span-4 space-y-6">
-          <Card className="p-5">
-            <h3 className="text-lg font-semibold text-text-primary mb-2">Adherence</h3>
-            <div className="h-[180px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={ringData} innerRadius={52} outerRadius={72} dataKey="value" startAngle={90} endAngle={-270} stroke="none">
-                    <Cell fill="#7FBF7F" />
-                    <Cell fill="#E5E7EB" />
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="text-center text-2xl font-semibold text-text-primary -mt-28 mb-16">{adherence}%</p>
-            <p className="text-sm text-text-secondary text-center">Medication adherence for the current cycle.</p>
-          </Card>
-
-          <Card className="p-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-text-primary">Upcoming Appointment</h3>
-              <CalendarDays className="w-4 h-4 text-text-secondary" />
-            </div>
-            <p className="text-sm text-text-secondary mt-2">{nextAppointmentDate}</p>
-            <p className="text-base font-medium text-text-primary mt-1">{nextAppointmentDoctor}</p>
-            <Link to="/appointments" className="block mt-4">
-              <Button className="w-full">Open appointments</Button>
-            </Link>
-          </Card>
-
-          <Card className="p-5">
-            <h3 className="text-lg font-semibold text-text-primary mb-3">Symptom Pattern</h3>
-            <div className="h-[180px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={symptomTrend} outerRadius="70%">
-                  <PolarGrid stroke="#E5E7EB" />
-                  <PolarAngleAxis dataKey="name" tick={{ fill: '#6B7280', fontSize: 11 }} />
-                  <Radar name="Severity" dataKey="severity" stroke="#7FBF7F" fill="#7FBF7F" fillOpacity={0.3} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="text-xs text-text-secondary">Compact weekly view of symptom intensity.</p>
-          </Card>
-        </div>
-      </section>
-
-      <footer className="rounded-xl border border-border bg-white p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="flex items-center gap-2 text-text-secondary text-sm">
-          <Clock3 className="w-4 h-4" />
-          Last sync completed a few moments ago.
-        </div>
-        <Link to="/medications">
-          <Button variant="outline">Review medications</Button>
-        </Link>
-      </footer>
-    </div>
+    </motion.div>
   );
 };
 

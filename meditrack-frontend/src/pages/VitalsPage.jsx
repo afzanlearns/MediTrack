@@ -1,191 +1,139 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { format } from 'date-fns';
-import { Activity, Droplets, HeartPulse, Plus } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
-import PageHeader from '../components/ui/PageHeader';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import Badge from '../components/ui/Badge';
-import Table from '../components/ui/Table';
-import EmptyState from '../components/ui/EmptyState';
-import Modal from '../components/ui/Modal';
-import vitalsApi from '../api/vitalsApi';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { Calendar } from 'lucide-react';
 
-const VitalsPage = ({ showToast }) => {
-  const [vitals, setVitals] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    recordedDate: format(new Date(), 'yyyy-MM-dd'),
-    systolic: '',
-    diastolic: '',
-    bloodSugar: '',
-    heartRate: '',
-    notes: '',
-  });
+const VitalsPage = () => {
+  const [activeTab, setActiveTab] = useState('Blood Pressure');
 
-  useEffect(() => {
-    fetchVitals();
-  }, []);
-
-  const fetchVitals = async () => {
-    try {
-      const res = await vitalsApi.getVitals();
-      const data = Array.isArray(res) ? res : (res?.data || []);
-      setVitals(data);
-    } catch {
-      showToast('Failed to load vitals', 'danger');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLog = async (e) => {
-    e.preventDefault();
-    try {
-      await vitalsApi.logVitals(formData);
-      showToast('Vitals recorded');
-      setModalOpen(false);
-      setFormData({
-        recordedDate: format(new Date(), 'yyyy-MM-dd'),
-        systolic: '',
-        diastolic: '',
-        bloodSugar: '',
-        heartRate: '',
-        notes: '',
-      });
-      fetchVitals();
-    } catch {
-      showToast('Failed to record vitals', 'danger');
-    }
-  };
-
-  const latest = vitals[0] || {};
-  const metrics = [
-    { label: 'Blood Pressure', value: latest.systolic && latest.diastolic ? `${latest.systolic}/${latest.diastolic}` : '--/--', unit: 'mmHg', icon: HeartPulse },
-    { label: 'Blood Sugar', value: latest.bloodSugar || '--', unit: 'mg/dL', icon: Droplets },
-    { label: 'Heart Rate', value: latest.heartRate || '--', unit: 'bpm', icon: Activity },
+  const data = [
+    { name: 'Jan', bp: 120, sugar: 90, hr: 75 },
+    { name: 'Feb', bp: 122, sugar: 95, hr: 78 },
+    { name: 'Mar', bp: 118, sugar: 88, hr: 72 },
+    { name: 'Apr', bp: 125, sugar: 105, hr: 80 },
+    { name: 'May', bp: 123, sugar: 100, hr: 76 },
   ];
 
-  const chartData = useMemo(
-    () =>
-      [...vitals]
-        .reverse()
-        .slice(-12)
-        .map((v) => ({
-          date: format(new Date(v.recordedDate || v.date), 'MMM d'),
-          systolic: Number(v.systolic || 0),
-          sugar: Number(v.bloodSugar || 0),
-          heart: Number(v.heartRate || 0),
-        })),
-    [vitals]
-  );
-
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Vitals"
-        subtitle="Monitor blood pressure, sugar, and heart rate trends"
-        action={
-          <Button onClick={() => setModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Log Vitals
-          </Button>
-        }
-      />
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="pb-6"
+    >
+      <div className="px-4 pt-12 pb-2 flex justify-between items-start">
+          <div>
+              <h1 className="text-[#E8EDF2] text-[1.75rem] font-bold tracking-tight">Vitals</h1>
+              <p className="text-[#4A6070] text-sm font-normal mt-0.5">Health measurements</p>
+          </div>
+          <button className="bg-[#00D4AA] text-[#0A0E13] text-sm font-semibold px-4 py-2 rounded-lg press">
+              + Log
+          </button>
+      </div>
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {metrics.map((metric) => (
-          <Card key={metric.label} className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-text-secondary">{metric.label}</p>
-              <div className="w-8 h-8 rounded-lg bg-accent-light border border-accent/35 flex items-center justify-center">
-                <metric.icon className="w-4 h-4 text-[#4B7A4B]" />
-              </div>
-            </div>
-            <p className="mt-2 text-2xl font-semibold text-text-primary">{metric.value}</p>
-            <p className="text-xs text-text-secondary mt-1">{metric.unit}</p>
-          </Card>
-        ))}
-      </section>
-
-      <Card className="p-5">
-        <h2 className="text-[20px] font-semibold text-text-primary mb-4">Trend Overview</h2>
-        <div className="h-[280px]">
-          {chartData.length === 0 ? (
-            <EmptyState icon={HeartPulse} title="No trend data" description="Log daily vitals to unlock trend analysis." />
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="date" tick={{ fill: '#6B7280', fontSize: 11 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} tickLine={false} axisLine={false} />
-                <Tooltip />
-                <Line type="monotone" dataKey="systolic" stroke="#7FBF7F" strokeWidth={2.5} dot={false} />
-                <Line type="monotone" dataKey="heart" stroke="#1F2937" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
+      <div className="mx-4 mt-4 bg-[#111720] border border-[#1E2D3D] border-t-[#00D4AA33] border-t rounded-xl p-5 shadow-[inset_0_1px_0_#00D4AA20] flex items-stretch">
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+            <p className="font-mono text-[2.5rem] font-light text-[#E8EDF2] leading-none tracking-tight">120/80</p>
+            <p className="font-mono text-[#4A6070] text-xs mt-1.5 tracking-widest uppercase">mmHg</p>
+            <p className="text-[#00D4AA] text-xs font-medium mt-1">● Normal</p>
         </div>
-      </Card>
+        
+        <div className="w-px bg-[#1E2D3D] self-center h-16 mx-2"></div>
+        
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+            <p className="font-mono text-[2.5rem] font-light text-[#E8EDF2] leading-none tracking-tight">98</p>
+            <p className="font-mono text-[#4A6070] text-xs mt-1.5 tracking-widest uppercase">mg/dL</p>
+            <p className="text-[#00D4AA] text-xs font-medium mt-1">● Normal</p>
+        </div>
 
-      <Card className="p-0 overflow-hidden">
-        <Table
-          loading={loading}
-          data={vitals}
-          columns={[
-            { key: 'recordedDate', label: 'Date', render: (v) => format(new Date(v.recordedDate || v.date), 'MMM d, yyyy') },
-            { key: 'bp', label: 'Blood Pressure', render: (v) => `${v.systolic || '--'}/${v.diastolic || '--'} mmHg` },
-            { key: 'sugar', label: 'Blood Sugar', render: (v) => (v.bloodSugar ? `${v.bloodSugar} mg/dL` : '--') },
-            { key: 'heart', label: 'Heart Rate', render: (v) => (v.heartRate ? `${v.heartRate} bpm` : '--') },
-            {
-              key: 'status',
-              label: 'Status',
-              render: (v) => {
-                const highBp = Number(v.systolic) > 140 || Number(v.diastolic) > 90;
-                const highSugar = Number(v.bloodSugar) > 140;
-                if (highBp || highSugar) return <Badge variant="warning">Monitor</Badge>;
-                return <Badge variant="success">Stable</Badge>;
-              },
-            },
-          ]}
-          emptyMessage="No vitals logged yet"
-        />
-      </Card>
+        <div className="w-px bg-[#1E2D3D] self-center h-16 mx-2"></div>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Log Vitals">
-        <form onSubmit={handleLog} className="space-y-4">
-          <Input
-            label="Date"
-            type="date"
-            required
-            value={formData.recordedDate}
-            onChange={(e) => setFormData({ ...formData, recordedDate: e.target.value })}
-          />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Systolic" type="number" value={formData.systolic} onChange={(e) => setFormData({ ...formData, systolic: e.target.value })} />
-            <Input label="Diastolic" type="number" value={formData.diastolic} onChange={(e) => setFormData({ ...formData, diastolic: e.target.value })} />
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+            <p className="font-mono text-[2.5rem] font-light text-[#E8EDF2] leading-none tracking-tight">72</p>
+            <p className="font-mono text-[#4A6070] text-xs mt-1.5 tracking-widest uppercase">bpm</p>
+            <p className="text-[#00D4AA] text-xs font-medium mt-1">● Normal</p>
+        </div>
+      </div>
+
+      <div className="mx-4 mt-3 bg-[#111720] border border-[#1E2D3D] rounded-xl p-4">
+          <h2 className="text-[#E8EDF2] text-sm font-semibold mb-3 font-sans">Trend Overview</h2>
+          <div className="bg-[#18222E] rounded-lg p-1 flex gap-1 mb-4">
+              {['Blood Pressure', 'Blood Sugar', 'Heart Rate'].map(tab => (
+                 <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-1 text-xs py-1.5 rounded-md transition-colors ${activeTab === tab ? 'bg-[#00D4AA] text-[#0A0E13] font-semibold' : 'text-[#7A8FA6] font-sans'}`}
+                 >
+                    {tab}
+                 </button>
+              ))}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Blood Sugar" type="number" value={formData.bloodSugar} onChange={(e) => setFormData({ ...formData, bloodSugar: e.target.value })} />
-            <Input label="Heart Rate" type="number" value={formData.heartRate} onChange={(e) => setFormData({ ...formData, heartRate: e.target.value })} />
+          <div className="h-[200px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+               <AreaChart data={data} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
+                 <defs>
+                   <linearGradient id="vitalsGrad" x1="0" y1="0" x2="0" y2="1">
+                     <stop offset="0%" stopColor="#00D4AA" stopOpacity="0.15"/>
+                     <stop offset="100%" stopColor="#00D4AA" stopOpacity="0"/>
+                   </linearGradient>
+                 </defs>
+                 <CartesianGrid strokeDasharray="3 3" stroke="#1E2D3D" vertical={false}/>
+                 <XAxis dataKey="name" stroke="#3D5166" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                 <YAxis stroke="#3D5166" fontSize={11} tickLine={false} axisLine={false} />
+                 <Area 
+                    type="monotone" 
+                    dataKey={activeTab === 'Blood Pressure' ? 'bp' : activeTab === 'Blood Sugar' ? 'sugar' : 'hr'} 
+                    stroke="#00D4AA" 
+                    strokeWidth={2} 
+                    fill="url(#vitalsGrad)" 
+                    activeDot={{ r: 4, fill: '#0A0E13', stroke: '#00D4AA', strokeWidth: 2 }}
+                 />
+               </AreaChart>
+            </ResponsiveContainer>
           </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-text-primary">Notes</label>
-            <textarea
-              className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-white min-h-[90px]"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit">Save vitals</Button>
-          </div>
-        </form>
-      </Modal>
-    </div>
+      </div>
+
+      <div className="mx-4 mt-3 mb-10 bg-[#111720] border border-[#1E2D3D] rounded-xl p-4">
+         <h2 className="text-[#E8EDF2] text-sm font-semibold mb-3 font-sans">Log Today's Vitals</h2>
+         <div className="flex flex-col gap-3">
+             <div className="relative">
+                 <input 
+                    type="date" 
+                    className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors" 
+                 />
+             </div>
+             <div className="grid grid-cols-2 gap-3">
+                <input 
+                    type="number" 
+                    placeholder="Systolic (120)" 
+                    className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors" 
+                />
+                <input 
+                    type="number" 
+                    placeholder="Diastolic (80)" 
+                    className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors" 
+                />
+                <input 
+                    type="number" 
+                    placeholder="Blood Sugar" 
+                    className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors" 
+                />
+                <input 
+                    type="number" 
+                    placeholder="Heart Rate" 
+                    className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors" 
+                />
+             </div>
+             <textarea 
+                placeholder="Notes (optional)" 
+                className="w-full bg-[#18222E] border border-[#1E2D3D] rounded-lg px-3 py-2.5 text-[#E8EDF2] text-sm placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors min-h-[80px] resize-none mt-1"
+             />
+             <button className="w-full bg-[#00D4AA] text-[#0A0E13] font-semibold py-3 rounded-lg mt-1 press">
+                 Log Vitals
+             </button>
+         </div>
+      </div>
+    </motion.div>
   );
 };
 

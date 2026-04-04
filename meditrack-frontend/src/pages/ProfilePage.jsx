@@ -92,7 +92,7 @@ const ProfilePage = ({ showToast }) => {
             <div className="space-y-1">
               <label className="text-sm font-medium text-text-primary">Allergies and Alerts</label>
               <textarea
-                className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-white min-h-[90px]"
+                className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-bg-surface min-h-[90px]"
                 value={profile.allergies}
                 onChange={(e) => setProfile({ ...profile, allergies: e.target.value })}
               />

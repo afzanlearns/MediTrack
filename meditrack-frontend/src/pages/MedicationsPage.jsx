@@ -1,271 +1,113 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, Search, Pill, Clock3, CalendarDays, Package, FileText } from 'lucide-react';
-import PageHeader from '../components/ui/PageHeader';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import Table from '../components/ui/Table';
-import Badge from '../components/ui/Badge';
-import Modal from '../components/ui/Modal';
-import EmptyState from '../components/ui/EmptyState';
-import medicationApi from '../api/medicationApi';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useAuthModal } from '../contexts/AuthModalContext';
+import { Search, Plus, Pencil, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-const MedicationsPage = ({ showToast }) => {
-  const [medications, setMedications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    dosage: '',
-    frequency: 'Once daily',
-    timeOfDay: 'Morning',
-    instructions: '',
-    startDate: '',
-    endDate: '',
-  });
+const MedicationsPage = () => {
+    const navigate = useNavigate();
+    const { isGuest } = useAuth();
+    const { openAuthModal } = useAuthModal();
+    const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    fetchMedications();
-  }, []);
+    const medications = [
+        { id: 1, name: 'Lisinopril', dosage: '10 mg', active: true, frequency: 'Daily', startDate: 'Oct 12, 2023' },
+        { id: 2, name: 'Metformin', dosage: '500 mg', active: true, frequency: 'Twice daily', startDate: 'Nov 5, 2023' },
+        { id: 3, name: 'Amoxicillin', dosage: '250 mg', active: false, frequency: 'Every 8 hours', startDate: 'Jan 10, 2024' },
+    ];
 
-  const fetchMedications = async () => {
-    try {
-      const res = await medicationApi.getMedications();
-      setMedications(Array.isArray(res) ? res : (res?.data || []));
-    } catch {
-      showToast('Failed to load medications', 'danger');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const filteredMeds = medications.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await medicationApi.createMedication(formData);
-      showToast('Medication added');
-      setModalOpen(false);
-      setFormData({
-        name: '',
-        dosage: '',
-        frequency: 'Once daily',
-        timeOfDay: 'Morning',
-        instructions: '',
-        startDate: '',
-        endDate: '',
-      });
-      fetchMedications();
-    } catch {
-      showToast('Failed to add medication', 'danger');
-    }
-  };
+    const handleAdd = () => {
+        if (isGuest) openAuthModal();
+        else navigate('/medications/new');
+    };
 
-  const filtered = medications.filter((m) => {
-    const term = search.toLowerCase();
     return (
-      m.name?.toLowerCase().includes(term) ||
-      m.dosage?.toLowerCase().includes(term) ||
-      m.frequency?.toLowerCase().includes(term)
+        <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="pb-6"
+        >
+            <div className="px-4 pt-12 pb-4 flex justify-between items-center">
+                <div>
+                    <h1 className="text-[#E8EDF2] text-[1.75rem] font-bold tracking-tight">Medications</h1>
+                    <p className="text-[#4A6070] text-sm font-normal mt-0.5">2 active</p>
+                </div>
+                <button 
+                    onClick={handleAdd}
+                    className="w-9 h-9 bg-[#00D4AA] rounded-full flex items-center justify-center press glow-accent text-[#0A0E13]"
+                >
+                    <Plus size={20} strokeWidth={2.5}/>
+                </button>
+            </div>
+
+            <div className="mx-4 mb-4 relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Search size={16} className="text-[#3D5166]" />
+                </div>
+                <input
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search medications..."
+                    className="w-full bg-[#111720] border border-[#1E2D3D] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors"
+                />
+            </div>
+
+            <div className="flex flex-col">
+                {filteredMeds.map((med, index) => (
+                    <motion.div
+                        key={med.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.05 }}
+                    >
+                        <div className="mx-4 mb-3 bg-[#111720] border border-[#1E2D3D] rounded-xl overflow-hidden">
+                            <div className="px-4 pt-4 pb-3 flex justify-between items-start">
+                                <div className="flex flex-col gap-2 relative w-full">
+                                    <div className="flex items-center justify-between w-full">
+                                        <div className="flex items-center">
+                                            <div className={`w-2 h-2 rounded-full ${med.active ? 'bg-[#00D4AA] shadow-[0_0_8px_#00D4AA]' : 'bg-[#3D5166]'}`} />
+                                            <h3 className="text-[#E8EDF2] font-semibold text-base ml-2 font-sans">{med.name}</h3>
+                                        </div>
+                                        <div className={`text-xs px-2.5 py-1 rounded-md font-medium ${med.active ? 'bg-[#00D4AA1A] text-[#00D4AA]' : 'bg-[#18222E] text-[#4A6070]'}`}>
+                                            {med.active ? 'Active' : 'Inactive'}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2.5 mt-0.5">
+                                        <span className="font-mono text-[#00D4AA] text-xs bg-[#00D4AA0D] border border-[#00D4AA20] px-2 py-0.5 rounded-md">
+                                            {med.dosage}
+                                        </span>
+                                        <span className="text-[#4A6070] text-xs bg-[#18222E] border border-[#1E2D3D] px-2 py-0.5 rounded-md font-sans">
+                                            {med.frequency}
+                                        </span>
+                                    </div>
+                                    <p className="text-[#4A6070] text-xs mt-1.5 font-sans">Started {med.startDate}</p>
+                                </div>
+                            </div>
+                            <div className="border-t border-[#1E2D3D] px-4 py-2.5 flex gap-4">
+                                <button className="text-[#00D4AA] text-xs flex items-center gap-1.5 font-medium press">
+                                    <Pencil size={12} strokeWidth={2.5} /> Edit
+                                </button>
+                                <button className="text-[#EF4444] text-xs flex items-center gap-1.5 font-medium press">
+                                    <Trash2 size={12} strokeWidth={2.5} /> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+
+            {filteredMeds.length === 0 && (
+                <div className="text-center mt-12 mx-4">
+                    <p className="text-[#4A6070] text-sm font-sans">No medications found.</p>
+                </div>
+            )}
+        </motion.div>
     );
-  });
-
-  const getStatus = (item) => {
-    if (!item.endDate) return { label: 'Active', variant: 'success' };
-    const ended = new Date(item.endDate) < new Date();
-    return ended ? { label: 'Completed', variant: 'default' } : { label: 'Active', variant: 'success' };
-  };
-
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Medications"
-        subtitle="Track active prescriptions and dosage schedules"
-        action={
-          <Button onClick={() => setModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Medication
-          </Button>
-        }
-      />
-
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-          <div className="w-full md:max-w-md">
-            <Input
-              icon={<Search className="w-4 h-4" />}
-              placeholder="Search medication, dosage, or frequency"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <Badge variant="secondary">Total medications: {filtered.length}</Badge>
-        </div>
-      </Card>
-
-      {filtered.length === 0 && !loading ? (
-        <Card className="p-0 overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 items-center">
-            <div className="p-8 border-b md:border-b-0 md:border-r border-border bg-page-bg/45">
-              <svg viewBox="0 0 240 180" className="w-full h-44" aria-hidden="true">
-                <rect x="40" y="35" width="160" height="110" rx="14" fill="#ECF3ED" />
-                <rect x="60" y="55" width="120" height="18" rx="6" fill="#D6EAD6" />
-                <rect x="60" y="83" width="88" height="14" rx="5" fill="#FFFFFF" />
-                <rect x="60" y="105" width="104" height="14" rx="5" fill="#FFFFFF" />
-                <rect x="172" y="82" width="20" height="38" rx="6" fill="#7FBF7F" />
-                <rect x="180" y="70" width="4" height="62" rx="2" fill="#7FBF7F" />
-              </svg>
-            </div>
-            <div className="p-8">
-              <EmptyState
-                icon={Pill}
-                title="No medications yet"
-                description="Add your first medication to start a clean daily treatment plan."
-                action={<Button onClick={() => setModalOpen(true)}>Add medication</Button>}
-              />
-            </div>
-          </div>
-        </Card>
-      ) : (
-        <Table
-          loading={loading}
-          data={filtered}
-          columns={[
-            {
-              key: 'name',
-              label: 'Medication',
-              render: (m) => (
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-accent-light border border-accent/35 flex items-center justify-center">
-                    <Pill className="w-4 h-4 text-[#4B7A4B]" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-text-primary">{m.name}</p>
-                    <p className="text-xs text-text-secondary">{m.dosage}</p>
-                  </div>
-                </div>
-              ),
-            },
-            {
-              key: 'schedule',
-              label: 'Schedule',
-              render: (m) => (
-                <div className="space-y-1">
-                  <p className="text-sm text-text-primary flex items-center gap-1.5"><Clock3 className="w-4 h-4 text-text-secondary" />{m.frequency}</p>
-                  <p className="text-xs text-text-secondary">{m.timeOfDay}</p>
-                </div>
-              ),
-            },
-            {
-              key: 'dates',
-              label: 'Course',
-              render: (m) => (
-                <div className="space-y-1 text-xs text-text-secondary">
-                  <p className="flex items-center gap-1.5"><CalendarDays className="w-4 h-4" />Start: {m.startDate || 'Not set'}</p>
-                  <p>End: {m.endDate || 'Ongoing'}</p>
-                </div>
-              ),
-            },
-            {
-              key: 'instructions',
-              label: 'Instructions',
-              render: (m) => <p className="text-sm text-text-secondary max-w-xs truncate">{m.instructions || 'No special instruction'}</p>,
-            },
-            {
-              key: 'status',
-              label: 'Status',
-              render: (m) => {
-                const status = getStatus(m);
-                return <Badge variant={status.variant}>{status.label}</Badge>;
-              },
-            },
-          ]}
-          emptyMessage="No medications found"
-        />
-      )}
-
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Add Medication">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Medication"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              icon={<Package className="w-4 h-4" />}
-            />
-            <Input
-              label="Dosage"
-              value={formData.dosage}
-              onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-text-primary">Frequency</label>
-              <select
-                className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-white"
-                value={formData.frequency}
-                onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-              >
-                <option>Once daily</option>
-                <option>Twice daily</option>
-                <option>Three times daily</option>
-                <option>Every 4-6 hours</option>
-                <option>As needed (PRN)</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-text-primary">Time of day</label>
-              <select
-                className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-white"
-                value={formData.timeOfDay}
-                onChange={(e) => setFormData({ ...formData, timeOfDay: e.target.value })}
-              >
-                <option>Morning</option>
-                <option>Noon</option>
-                <option>Evening</option>
-                <option>Night</option>
-                <option>Anytime</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Start date"
-              type="date"
-              value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-            />
-            <Input
-              label="End date"
-              type="date"
-              value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-text-primary">Instructions</label>
-            <textarea
-              className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-white min-h-[90px]"
-              value={formData.instructions}
-              onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
-              placeholder="Take after food, avoid caffeine, etc."
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" icon={<FileText className="w-4 h-4" />}>Save medication</Button>
-          </div>
-        </form>
-      </Modal>
-    </div>
-  );
 };
 
 export default MedicationsPage;

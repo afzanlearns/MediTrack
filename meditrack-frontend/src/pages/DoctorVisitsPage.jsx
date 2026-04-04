@@ -1,199 +1,115 @@
-import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { Calendar, Plus, MapPin, User, Search, FileText, ClipboardList, Trash2 } from 'lucide-react';
-import PageHeader from '../components/ui/PageHeader';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import Table from '../components/ui/Table';
-import EmptyState from '../components/ui/EmptyState';
-import Badge from '../components/ui/Badge';
-import axios from 'axios';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useAuthModal } from '../contexts/AuthModalContext';
+import { Calendar, UserPlus, Clock, Search, MapPin } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-const DoctorVisitsPage = ({ showToast }) => {
-  const [visits, setVisits] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    title: '',
-    visitDate: format(new Date(), 'yyyy-MM-dd'),
-    doctorName: '',
-    summary: '',
-    recommendations: '',
-    location: ''
-  });
+const DoctorVisitsPage = () => {
+    const navigate = useNavigate();
+    const { isGuest } = useAuth();
+    const { openAuthModal } = useAuthModal();
+    const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    fetchVisits();
-  }, []);
+    const visits = [
+        // Simulated empty state initially for visual polish. 
+        // Populate with data later as needed.
+    ];
 
-  const fetchVisits = async () => {
-    try {
-      const res = await axios.get('http://localhost:8080/api/visits');
-      setVisits(res.data || []);
-    } catch (err) {
-      showToast('Failed to load visits', 'danger');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const filteredVisits = visits.filter(v => v.doctorName.toLowerCase().includes(search.toLowerCase()));
 
-  const handleLogVisit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post('http://localhost:8080/api/visits', formData);
-      showToast('Visit record saved successfully');
-      setFormData({
-        title: '',
-        visitDate: format(new Date(), 'yyyy-MM-dd'),
-        doctorName: '',
-        summary: '',
-        recommendations: '',
-        location: ''
-      });
-      fetchVisits();
-    } catch (err) {
-      showToast('Failed to save visit record', 'danger');
-    }
-  };
+    const handleAdd = () => {
+        if (isGuest) openAuthModal();
+        else navigate('/visits/new');
+    };
 
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:8080/api/visits/${id}`);
-      showToast('Visit record deleted');
-      fetchVisits();
-    } catch (err) {
-      showToast('Failed to delete visit record', 'danger');
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <PageHeader title="Doctor Visits" subtitle="Timeline of your past medical appointments and summaries" />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1 h-fit">
-          <h3 className="text-lg font-semibold text-text-primary mb-6">Log Past Visit</h3>
-          <form onSubmit={handleLogVisit} className="space-y-4">
-            <Input 
-              label="Visit Title" 
-              placeholder="e.g. Regular Check-up" 
-              required
-              value={formData.title}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <Input 
-                label="Date" 
-                type="date" 
-                required
-                value={formData.visitDate}
-                onChange={(e) => setFormData({...formData, visitDate: e.target.value})}
-              />
-              <Input 
-                label="Doctor" 
-                placeholder="Dr. Smith"
-                value={formData.doctorName}
-                onChange={(e) => setFormData({...formData, doctorName: e.target.value})}
-              />
-            </div>
-            <Input 
-              label="Location" 
-              icon={<MapPin className="w-4 h-4" />}
-              placeholder="Medi-Clinic"
-              value={formData.location}
-              onChange={(e) => setFormData({...formData, location: e.target.value})}
-            />
-            
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-text-primary">Summary</label>
-              <textarea 
-                className="w-full border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-background"
-                rows={3}
-                placeholder="What happened during the visit?"
-                value={formData.summary}
-                onChange={(e) => setFormData({...formData, summary: e.target.value})}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-text-primary text-accent">Recommendations</label>
-              <textarea 
-                className="w-full border border-accent/20 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent bg-accent/5"
-                rows={2}
-                placeholder="Doctor's advice..."
-                value={formData.recommendations}
-                onChange={(e) => setFormData({...formData, recommendations: e.target.value})}
-              />
-            </div>
-
-            <Button type="submit" className="w-full" icon={<Plus className="w-4 h-4" />}>
-              Save Visit
-            </Button>
-          </form>
-        </Card>
-
-        <div className="lg:col-span-2 space-y-6">
-          <div className="relative">
-            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-accent" />
-              Visit Timeline
-            </h3>
-            
-            <div className="space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-border/50">
-              {visits.length === 0 && !loading && (
-                <div className="ml-10 py-10 bg-background/30 rounded-xl border border-dashed border-border flex flex-col items-center justify-center">
-                  <p className="text-text-secondary text-sm">Your visit timeline is empty. Start by logging a visit.</p>
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="pb-6"
+        >
+            <div className="px-4 pt-12 pb-4 flex justify-between items-center">
+                <div>
+                     <h1 className="text-[#E8EDF2] text-[2.25rem] font-bold tracking-tight">Visits</h1>
+                    <p className="text-[#4A6070] text-sm font-normal mt-0.5">Upcoming appointments</p>
                 </div>
-              )}
-
-              {visits.map((visit) => (
-                <div key={visit.id} className="relative ml-10 group bg-white border border-border rounded-xl p-5 hover:border-accent hover:shadow-md transition-all">
-                  <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 border-white bg-accent flex items-center justify-center shadow-sm">
-                    <Calendar className="w-4 h-4 text-white" />
-                  </div>
-                  
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-bold text-text-primary text-base uppercase">{visit.title}</h4>
-                    <span className="text-xs font-bold text-accent bg-accent/5 px-2 py-1 rounded-full">
-                      {format(new Date(visit.visitDate), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 text-xs font-medium text-text-secondary mb-3 pb-3 border-b border-border/10">
-                    <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />{visit.doctorName || 'Dr. Not specified'}</span>
-                    <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{visit.location || 'Anywhere'}</span>
-                  </div>
-
-                  {visit.summary && (
-                    <div className="mb-3">
-                      <p className="text-sm text-text-primary leading-relaxed">{visit.summary}</p>
-                    </div>
-                  )}
-
-                  {visit.recommendations && (
-                    <div className="bg-accent/5 border-l-4 border-l-accent p-3 rounded-r-lg">
-                      <h5 className="text-[10px] font-bold text-accent uppercase mb-1 flex items-center gap-1.5">
-                        <FileText className="w-3 h-3" />
-                        Recommendations
-                      </h5>
-                      <p className="text-sm text-text-primary italic">"{visit.recommendations}"</p>
-                    </div>
-                  )}
-
-                  <button 
-                    onClick={() => handleDelete(visit.id)}
-                    className="absolute bottom-4 right-4 p-1.5 text-text-secondary hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                <button 
+                    onClick={handleAdd}
+                    className="w-9 h-9 bg-[#00D4AA] rounded-full flex items-center justify-center press glow-accent text-[#0A0E13]"
+                >
+                    <UserPlus size={20} strokeWidth={2.5}/>
+                </button>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+
+             <div className="mx-4 mb-6 relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Search size={16} className="text-[#3D5166]" />
+                </div>
+                <input
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search doctors or specialties..."
+                    className="w-full bg-[#111720] border border-[#1E2D3D] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none focus:border-[#00D4AA]/50 focus:ring-1 focus:ring-[#00D4AA]/20 transition-colors"
+                />
+            </div>
+
+            <div className="flex flex-col">
+                 {filteredVisits.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center mt-12 mb-8 mx-4">
+                        <div className="relative mb-6">
+                            <div className="absolute inset-0 bg-[#00D4AA]/10 rounded-full blur-2xl animate-pulse"></div>
+                            <div className="w-24 h-24 rounded-full bg-[#0F1A24] border border-[#1E2D3D] flex items-center justify-center relative z-10">
+                                <Calendar size={40} className="text-[#3D5166]" strokeWidth={1} />
+                            </div>
+                        </div>
+                        <h3 className="text-[#E8EDF2] text-xl font-bold mb-2">No Upcoming Visits</h3>
+                        <p className="text-[#4A6070] text-sm text-center max-w-[240px] mb-8 font-sans">
+                            Keep track of your medical appointments and attach relevant notes and logs.
+                        </p>
+                        <button 
+                            onClick={handleAdd}
+                            className="bg-[#111720] border border-[#1E2D3D] text-[#E8EDF2] px-6 py-3 rounded-lg text-sm font-medium press hover:border-[#00D4AA]/50 transition-colors"
+                        >
+                            Schedule a Visit
+                        </button>
+                    </div>
+                ) : (
+                    filteredVisits.map((visit, index) => (
+                        <motion.div
+                            key={visit.id}
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2, delay: index * 0.05 }}
+                        >
+                            <div className="mx-4 mb-3 bg-[#111720] border border-[#1E2D3D] rounded-xl p-4 flex gap-4 press" onClick={() => navigate(`/visits/${visit.id}`)}>
+                                <div className="w-12 h-12 bg-[#0F1A24] border border-[#1E2D3D] rounded-full flex items-center justify-center shrink-0">
+                                     <Calendar size={20} className="text-[#00D4AA]" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-[#E8EDF2] font-semibold text-base">{visit.doctorName}</h3>
+                                    <p className="text-[#4A6070] text-xs font-medium uppercase tracking-wider mt-0.5 mb-2">{visit.specialty}</p>
+
+                                    <div className="flex flex-col gap-1.5 border-t border-[#1E2D3D] pt-3 mt-1">
+                                        <div className="flex items-center gap-2">
+                                            <Clock size={14} className="text-[#3D5166]" />
+                                            <span className="text-[#E8EDF2] text-sm font-medium">{visit.date} <span className="text-[#4A6070] font-normal mx-1">•</span> {visit.time}</span>
+                                        </div>
+                                         <div className="flex items-center gap-2">
+                                            <MapPin size={14} className="text-[#3D5166]" />
+                                            <span className="text-[#4A6070] text-sm line-clamp-1">{visit.location}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))
+                )}
+            </div>
+        </motion.div>
+    );
 };
 
 export default DoctorVisitsPage;

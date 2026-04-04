@@ -30,7 +30,7 @@ const EmergencyPage = ({ showToast }) => {
   }, [showToast]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-white text-[#111827] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-bg-surface text-[#111827] overflow-y-auto">
       <div className="max-w-4xl mx-auto px-6 py-8 min-h-screen flex flex-col">
         <div className="flex items-center justify-between mb-8">
           <Button variant="ghost" onClick={() => navigate(-1)}>

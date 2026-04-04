@@ -7,7 +7,7 @@ import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import EmptyState from '../components/ui/EmptyState';
-import Badge from '../components/ui/Badge';
+import { Badge } from '../components/ui/Badge';
 import {
   getAllAppointments,
   createAppointment,
@@ -114,13 +114,13 @@ const AppointmentsPage = ({ showToast }) => {
       <Card className="p-3">
         <div className="inline-flex rounded-md border border-border overflow-hidden">
           <button
-            className={`px-4 h-10 text-sm font-medium ${tab === 'upcoming' ? 'bg-accent-light text-[#4B7A4B]' : 'bg-white text-text-secondary'}`}
+            className={`px-4 h-10 text-sm font-medium ${tab === 'upcoming' ? 'bg-accent-light text-[#4B7A4B]' : 'bg-bg-surface text-text-secondary'}`}
             onClick={() => setTab('upcoming')}
           >
             Upcoming ({upcoming.length})
           </button>
           <button
-            className={`px-4 h-10 text-sm font-medium border-l border-border ${tab === 'past' ? 'bg-accent-light text-[#4B7A4B]' : 'bg-white text-text-secondary'}`}
+            className={`px-4 h-10 text-sm font-medium border-l border-border ${tab === 'past' ? 'bg-accent-light text-[#4B7A4B]' : 'bg-bg-surface text-text-secondary'}`}
             onClick={() => setTab('past')}
           >
             Past ({past.length})
@@ -200,7 +200,7 @@ const AppointmentsPage = ({ showToast }) => {
           <div className="space-y-1">
             <label className="text-sm font-medium text-text-primary">Notes</label>
             <textarea
-              className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-white min-h-[90px]"
+              className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-bg-surface min-h-[90px]"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />
