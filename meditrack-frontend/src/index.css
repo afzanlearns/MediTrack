@@ -1,67 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 150 18% 97%;
-    --foreground: 216 22% 18%;
-    --card: 0 0% 100%;
-    --card-foreground: 216 22% 18%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 216 22% 18%;
-    --primary: 120 34% 62%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 150 22% 94%;
-    --secondary-foreground: 216 22% 20%;
-    --muted: 150 18% 95%;
-    --muted-foreground: 215 15% 45%;
-    --accent: 112 46% 84%;
-    --accent-foreground: 216 22% 20%;
-    --destructive: 0 72% 56%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 210 17% 90%;
-    --input: 210 17% 90%;
-    --ring: 120 34% 62%;
-    --radius: 0.75rem;
-  }
-}
-
-@layer base {
   * {
-    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
   }
+  
+  html {
+    background-color: #0A0E13;
+    color-scheme: dark;
+  }
+  
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    background-color: #0A0E13;
+    background-image: radial-gradient(circle, #1E2D3D 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-attachment: fixed;
+    color: #E8EDF2;
+    font-family: 'Outfit', sans-serif;
+    overscroll-behavior-y: none;
   }
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/35 transition-colors;
-}
-
-.recharts-cartesian-grid-horizontal line,
-.recharts-cartesian-grid-vertical line {
-  stroke: theme('colors.border.DEFAULT');
-  stroke-opacity: 0.4;
-}
-
-.recharts-default-tooltip {
-  @apply !bg-white !border-border !rounded-xl !shadow-sm !p-3 !text-xs !font-medium !text-text-primary !border;
+  
+  /* Custom scrollbar (webkit) */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1E2D3D; border-radius: 2px; }
+  
+  /* Remove number input spinners */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+  
+  /* Date input dark styling */
+  input[type='date']::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+  }
 }
 
 @layer utilities {
-  .content-shell {
-    @apply mx-auto w-full max-w-[1280px];
+  /* Glow utilities */
+  .glow-accent {
+    box-shadow: 0 0 0 1px #00D4AA33, 0 4px 32px rgba(0, 212, 170, 0.12);
+  }
+  
+  .glow-danger {
+    box-shadow: 0 0 0 1px #EF44441A, 0 4px 24px rgba(239, 68, 68, 0.1);
+  }
+  
+  /* Active press scale */
+  .press {
+    @apply transition-transform duration-100 active:scale-[0.97];
+  }
+  
+  /* Font mono for numbers */
+  .num {
+    font-family: 'DM Mono', monospace;
   }
 }
