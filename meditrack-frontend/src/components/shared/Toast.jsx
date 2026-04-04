@@ -28,7 +28,7 @@ export default function Toast() {
 
   return (
     <div className="fixed bottom-5 right-5 z-50 flex items-start gap-3 max-w-sm
-                    bg-red-600 text-white px-4 py-3 rounded-xl shadow-lg animate-bounce-in">
+                    bg-red-600 text-white px-4 py-3 rounded-xl glow-accent animate-bounce-in">
       <span className="text-lg mt-0.5">⚠️</span>
       <div className="flex-1">
         <p className="text-sm font-semibold">Error</p>

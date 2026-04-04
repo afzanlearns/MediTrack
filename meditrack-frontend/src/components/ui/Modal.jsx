@@ -35,7 +35,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
       />
       <div 
         ref={modalRef}
-        className={`relative w-full bg-white rounded-xl border border-border shadow-soft flex flex-col max-h-[90vh] ${sizes[size]}`}
+        className={`relative w-full bg-bg-surface rounded-xl border border-border shadow-soft flex flex-col max-h-[90vh] ${sizes[size]}`}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h3 className="text-lg font-semibold text-text-primary">{title}</h3>

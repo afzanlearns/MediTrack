@@ -23,7 +23,7 @@ const Table = ({ columns, data, loading, emptyMessage = 'No data available' }) =
               <tr key={i} className="animate-pulse">
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-4">
-                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                    <div className="h-4 bg-bg-elevated rounded w-full"></div>
                   </td>
                 ))}
               </tr>
@@ -41,7 +41,7 @@ const Table = ({ columns, data, loading, emptyMessage = 'No data available' }) =
             data.map((row, i) => (
               <tr 
                 key={row.id || i} 
-                className="bg-white hover:bg-page-bg/70 transition-colors"
+                className="bg-bg-surface hover:bg-page-bg/70 transition-colors"
               >
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-4 text-sm text-text-primary align-middle">

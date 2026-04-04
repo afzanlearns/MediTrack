@@ -35,8 +35,8 @@ export default function DoseCard({ dose, onStatusChange }) {
       <div className="flex items-center gap-3">
         <span className="text-xl">{STATUS_ICONS[dose.status]}</span>
         <div>
-          <p className="font-medium text-gray-800">{dose.medicationName}</p>
-          <p className="text-xs text-gray-500">{dose.medicationDosage} · {time}</p>
+          <p className="font-medium text-text-secondary">{dose.medicationName}</p>
+          <p className="text-xs text-text-muted">{dose.medicationDosage} · {time}</p>
         </div>
       </div>
 

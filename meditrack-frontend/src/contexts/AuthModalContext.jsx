@@ -2,25 +2,23 @@ import React, { createContext, useContext, useState } from 'react';
 
 const AuthModalContext = createContext();
 
+export const useAuthModal = () => {
+  const context = useContext(AuthModalContext);
+  if (!context) {
+    throw new Error('useAuthModal must be used within an AuthModalProvider');
+  }
+  return context;
+};
+
 export const AuthModalProvider = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [featureName, setFeatureName] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const openAuthModal = (feature) => {
-    setFeatureName(feature || null);
-    setIsOpen(true);
-  };
-
-  const closeAuthModal = () => {
-    setIsOpen(false);
-    setFeatureName(null);
-  };
+  const openAuthModal = () => setIsAuthModalOpen(true);
+  const closeAuthModal = () => setIsAuthModalOpen(false);
 
   return (
-    <AuthModalContext.Provider value={{ isOpen, featureName, openAuthModal, closeAuthModal }}>
+    <AuthModalContext.Provider value={{ isAuthModalOpen, openAuthModal, closeAuthModal }}>
       {children}
     </AuthModalContext.Provider>
   );
 };
-
-export const useAuthModal = () => useContext(AuthModalContext);
