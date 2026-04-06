@@ -1,138 +1,124 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Phone, ArrowLeft, Activity } from 'lucide-react';
-import { getProfile } from '../api/profileApi';
-import { toast } from '../utils/toast';
+import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Phone, ArrowLeft } from 'lucide-react'
+import { getProfile } from '../api/profileApi'
+import { toast } from '../utils/toast'
 
 export default function EmergencyPage() {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState({
-    bloodType: 'UNKNOWN',
-    allergies: 'NO DATA RECORDED',
-    emergencyContactName: 'NOT SPECIFIED',
+    bloodType: '',
+    allergies: '',
+    emergencyContactName: '',
     emergencyContactPhone: '',
     fullName: '',
-    dateOfBirth: ''
-  });
+  })
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await getProfile();
-        if (res.data) {
-          setProfile((prev) => ({ ...prev, ...res.data }));
-        }
-      } catch (err) {
-        toast.error('Unable to fetch emergency profile');
+        const res = await getProfile()
+        if (res.data) setProfile((prev) => ({ ...prev, ...res.data }))
+      } catch {
+        toast.error('Unable to fetch emergency profile')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    load();
-  }, []);
+    }
+    load()
+  }, [])
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="px-5 pt-14">
+      <p className="font-mono text-xs text-[#3D5166] animate-pulse">Loading...</p>
+    </div>
+  )
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#080B0F] text-[#F0F4F8] overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-6 py-12 min-h-screen flex flex-col">
-        {/* Navigation */}
-        <div className="flex items-center justify-between mb-12">
-          <button 
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-[#3D5166] press"
-          >
-            <ArrowLeft size={14} />
-            Termination
-          </button>
-          
-          <div className="flex items-center gap-2 px-3 py-1 border border-[#D95B5B50] bg-[#D95B5B10] rounded">
-            <ShieldAlert size={12} className="text-[#D95B5B]" />
-            <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#D95B5B] font-bold">
-              Emergency Protocol v1.0
-            </span>
-          </div>
+    <div className="pb-10">
+      {/* Header */}
+      <div className="px-5 pt-14 pb-5 flex items-start justify-between">
+        <div>
+          <h1 className="font-sans text-2xl font-semibold text-[#F0F4F8]">Emergency</h1>
+          <p className="font-sans text-sm text-[#3D5166] mt-0.5">ICE medical information</p>
         </div>
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 font-sans text-sm text-[#3D5166] press"
+        >
+          <ArrowLeft size={14} />
+          Back
+        </button>
+      </div>
 
-        {/* Clinical Identity */}
-        <div className="mb-12 border-l-2 border-[#D95B5B] pl-6 py-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#3D5166] mb-1">Authenticated Subject</p>
-          <h1 className="font-sans text-4xl font-semibold tracking-tight text-[#F0F4F8]">
-            {profile.fullName || 'UNIDENTIFIED'}
-          </h1>
-          <div className="flex gap-4 mt-3">
-             <div className="flex flex-col">
-                <span className="font-mono text-[8px] uppercase text-[#1C2530] tracking-widest font-bold">DOB</span>
-                <span className="font-mono text-xs text-[#3D5166]">{profile.dateOfBirth || '-- / -- / --'}</span>
-             </div>
-             <div className="flex flex-col">
-                <span className="font-mono text-[8px] uppercase text-[#1C2530] tracking-widest font-bold">System ID</span>
-                <span className="font-mono text-xs text-[#3D5166]">MT-PRX-001</span>
-             </div>
-          </div>
-        </div>
-
-        {/* Data Grid */}
-        <div className="space-y-6 flex-1">
-          {/* Blood Type Card */}
-          <div className="card p-8 border-[#D95B5B30]">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#3D5166]">Core Blood Registry</span>
-              <Activity size={16} className="text-[#D95B5B]" />
-            </div>
-            <h2 className="font-sans text-7xl font-bold text-[#F0F4F8] leading-none">
-              {profile.bloodType || 'N/A'}
-            </h2>
-          </div>
-
-          {/* Allergies Card */}
-          <div className="card p-8 bg-[#D95B5B05] border-[#D95B5B20]">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#D95B5B] mb-4">
-              Critical Allergies & Contraindications
-            </p>
-            <p className="font-sans text-2xl font-medium text-[#F0F4F8] leading-snug">
-              {profile.allergies || 'NONE DISCLOSED'}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <a
-              href="tel:911"
-              className="group p-6 rounded-xl border border-[#D95B5B] bg-[#D95B5B] flex flex-col items-center justify-center gap-2 press"
-            >
-              <Phone size={24} className="text-white" />
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-white font-bold font-sans">
-                Emergency Dispatch
-              </span>
-            </a>
-            
-            <a
-              href={profile.emergencyContactPhone ? `tel:${profile.emergencyContactPhone}` : '#'}
-              className="group p-6 rounded-xl border border-[#1C2530] bg-[#0E151C] flex flex-col items-center justify-center gap-2 press hover:border-[#F0F4F820]"
-            >
-              <Phone size={24} className="text-[#3D5166] group-hover:text-[#F0F4F8]" />
-              <div className="text-center">
-                <span className="block font-mono text-[10px] uppercase tracking-[0.2em] text-[#3D5166] group-hover:text-[#F0F4F8]">
-                  Primary Proxy
-                </span>
-                <span className="block font-sans text-xs text-[#F0F4F8] mt-1 opacity-60">
-                  {profile.emergencyContactName || 'ICE'}
-                </span>
-              </div>
-            </a>
-          </div>
-        </div>
-
-        {/* Legal / System Footer */}
-        <div className="mt-12 text-center">
-          <p className="font-mono text-[8px] text-[#1C2530] uppercase tracking-[0.4em] leading-relaxed">
-            Authorized for medical personnel use only.<br/>
-            MediTrack Precision Health Systems · Secure Link Active
+      {/* Patient + Blood Type in one card */}
+      <div className="mx-5 mb-4 card overflow-hidden divide-y divide-[#1C2530]">
+        <div className="px-5 py-4">
+          <p className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166] mb-1">Patient</p>
+          <p className="font-sans text-base font-semibold text-[#F0F4F8]">
+            {profile.fullName || 'Not specified'}
           </p>
         </div>
+        <div className="px-5 py-4">
+          <p className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166] mb-1">Blood Type</p>
+          <div className="flex items-center gap-2">
+            <p className="font-mono text-2xl font-bold text-[#F0F4F8]">
+              {profile.bloodType || 'N/A'}
+            </p>
+            {profile.bloodType && (
+              <span className="font-mono text-[10px] text-[#00C896] bg-[#00C8961A] px-2 py-0.5 rounded-full">ON FILE</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Allergies */}
+      <div className="mx-5 mb-4 card px-5 py-4">
+        <p className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166] mb-2">
+          Allergies & Contraindications
+        </p>
+        <p className="font-sans text-sm text-[#F0F4F8] leading-relaxed">
+          {profile.allergies || 'None disclosed'}
+        </p>
+      </div>
+
+      {/* Call actions — both as full-width rows in a card */}
+      <div className="mx-5 mb-4 card overflow-hidden divide-y divide-[#1C2530]">
+        <a
+          href="tel:911"
+          className="w-full flex items-center gap-4 px-5 py-4 press group"
+        >
+          <div className="w-9 h-9 rounded-lg bg-[#D95B5B] flex items-center justify-center flex-shrink-0">
+            <Phone size={16} className="text-white" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-sans text-sm font-semibold text-[#F0F4F8]">Emergency Dispatch</p>
+            <p className="font-mono text-[11px] text-[#3D5166]">Call 911</p>
+          </div>
+          <span className="font-mono text-[10px] text-[#D95B5B] bg-[#D95B5B1A] px-2 py-0.5 rounded-full">SOS</span>
+        </a>
+        <a
+          href={profile.emergencyContactPhone ? `tel:${profile.emergencyContactPhone}` : '#'}
+          className="w-full flex items-center gap-4 px-5 py-4 press"
+        >
+          <div className="w-9 h-9 rounded-lg bg-[#141B23] border border-[#1C2530] flex items-center justify-center flex-shrink-0">
+            <Phone size={16} className="text-[#3D5166]" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-sans text-sm font-semibold text-[#F0F4F8]">
+              {profile.emergencyContactName || 'ICE Contact'}
+            </p>
+            <p className="font-mono text-[11px] text-[#3D5166]">
+              {profile.emergencyContactPhone || 'No number on file'}
+            </p>
+          </div>
+        </a>
+      </div>
+
+      <div className="mx-5 text-center mt-4">
+        <p className="font-mono text-[10px] text-[#3D5166]">For medical personnel use only</p>
       </div>
     </div>
-  );
+  )
 }
-

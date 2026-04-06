@@ -21,6 +21,7 @@ import PrescriptionsPage from './pages/PrescriptionsPage'
 import AppointmentsPage from './pages/AppointmentsPage'
 import ProfilePage from './pages/ProfilePage'
 import EmergencyPage from './pages/EmergencyPage'
+import NotificationsPage from './pages/NotificationsPage'
 
 const AppRoutes = () => {
   const { isAuthenticated, isGuest, isReady } = useAuth()
@@ -64,6 +65,12 @@ const AppRoutes = () => {
           path="/emergency"
           element={
             isAuthenticated ? <EmergencyPage /> : <LockedPage featureName="Emergency Contact" />
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            isAuthenticated ? <NotificationsPage /> : <LockedPage featureName="Notifications" />
           }
         />
       </Route>

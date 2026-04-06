@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { User, Mail, Phone, MapPin, Heart, ShieldAlert, Save, LogOut, Camera } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { getProfile, updateProfile } from '../api/profileApi';
-import { toast } from '../utils/toast';
+import React, { useEffect, useState } from 'react'
+import { User, ShieldAlert } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import { getProfile, updateProfile } from '../api/profileApi'
+import { toast } from '../utils/toast'
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { user, logout } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [profile, setProfile] = useState({
     fullName: '',
     phone: '',
@@ -17,203 +17,169 @@ export default function ProfilePage() {
     emergencyContactName: '',
     emergencyContactPhone: '',
     insuranceProvider: '',
-  });
+  })
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    fetchProfile()
+  }, [])
 
   const fetchProfile = async () => {
     try {
-      const res = await getProfile();
-      if (res.data) setProfile(res.data);
+      const res = await getProfile()
+      if (res.data) setProfile(res.data)
     } catch (err) {
-      toast.error('Unable to retrieve medical profile');
+      toast.error('Unable to retrieve medical profile')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleUpdate = async (e) => {
-    e.preventDefault();
-    setSaving(true);
+    e.preventDefault()
+    setSaving(true)
     try {
-      await updateProfile(profile);
-      toast.success('Medical profile synchronized');
+      await updateProfile(profile)
+      toast.success('Profile saved.')
     } catch (err) {
-      toast.error('Failed to update information');
+      toast.error('Failed to update information')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
+
+  const inputClass = "w-full bg-[#141B23] border border-[#1C2530] rounded-xl px-4 py-3 font-sans text-sm text-[#F0F4F8] placeholder:text-[#3D5166] focus:border-[#00C89650] transition-colors outline-none"
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <p className="font-mono text-[10px] uppercase tracking-widest text-[#3D5166] animate-pulse">Syncing Profile...</p>
+    <div className="px-5 pt-14">
+      <p className="font-mono text-xs text-[#3D5166] animate-pulse">Loading...</p>
     </div>
-  );
+  )
 
   return (
-    <div className="pb-16 max-w-4xl mx-auto px-5">
+    <div className="pb-10">
       {/* Header */}
-      <div className="pt-14 pb-10">
-        <h1 className="font-sans text-3xl font-semibold text-[#F0F4F8]">Profile</h1>
-        <p className="font-mono text-xs text-[#3D5166] mt-2 italic">Standard identification & medical history</p>
+      <div className="px-5 pt-14 pb-5 flex items-start justify-between">
+        <div>
+          <h1 className="font-sans text-2xl font-semibold text-[#F0F4F8]">Profile</h1>
+          <p className="font-sans text-sm text-[#3D5166] mt-0.5">Identification & medical history</p>
+        </div>
+        <button
+          onClick={logout}
+          className="font-sans text-sm font-medium text-[#D95B5B] border border-[#D95B5B40] px-4 py-2 rounded-xl press"
+        >
+          Sign Out
+        </button>
       </div>
 
-      <div className="space-y-10">
-        {/* Identity Card */}
-        <div className="card p-6 flex flex-col md:flex-row items-center gap-6">
-          <div className="relative group">
-            <div className="w-24 h-24 rounded-full overflow-hidden border border-[#1C2530] bg-[#0E151C] flex items-center justify-center">
-              {user?.picture ? (
-                <img src={user.picture} alt="" className="w-full h-full object-cover grayscale" />
-              ) : (
-                <User size={32} className="text-[#1C2530]" />
-              )}
-            </div>
-            <div className="absolute inset-0 bg-[#080B0F80] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full cursor-pointer">
-              <Camera size={18} className="text-[#F0F4F8]" />
-            </div>
-          </div>
-          
-          <div className="flex-1 text-center md:text-left">
-            <h2 className="font-sans text-xl font-medium text-[#F0F4F8]">{user?.name || profile.fullName || 'Authorized User'}</h2>
-            <p className="font-mono text-[10px] text-[#3D5166] uppercase mt-1 tracking-wider">{user?.email}</p>
-            <p className="font-mono text-[9px] text-[#00C896] mt-2 tracking-widest">ENCRYPTED IDENTITY ACCESS</p>
-          </div>
+      {/* Identity card */}
+      <div className="mx-5 mb-4 card px-5 py-4 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full overflow-hidden border border-[#1C2530] bg-[#141B23] flex items-center justify-center flex-shrink-0">
+          {user?.picture ? (
+            <img src={user.picture} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <User size={20} className="text-[#3D5166]" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="font-sans text-base font-semibold text-[#F0F4F8] truncate">{user?.name || profile.fullName || 'Authorized User'}</p>
+          <p className="font-mono text-[11px] text-[#3D5166] mt-0.5 truncate">{user?.email}</p>
+        </div>
+      </div>
 
-          <button 
-            onClick={logout}
-            className="px-5 py-2 font-mono text-[10px] uppercase tracking-widest text-[#D95B5B] border border-[#D95B5B30] rounded-lg press"
-          >
-            Sign Out
-          </button>
+      <form onSubmit={handleUpdate}>
+        {/* Personal Info */}
+        <div className="mx-5 mb-4 card px-4 py-4">
+          <h2 className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166] mb-4">
+            Personal Information
+          </h2>
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={profile.fullName}
+              onChange={e => setProfile({...profile, fullName: e.target.value})}
+              className={inputClass}
+              placeholder="Full Name"
+            />
+            <input
+              type="text"
+              value={profile.phone}
+              onChange={e => setProfile({...profile, phone: e.target.value})}
+              className={inputClass}
+              placeholder="Phone Number"
+            />
+            <input
+              type="text"
+              value={profile.address}
+              onChange={e => setProfile({...profile, address: e.target.value})}
+              className={inputClass}
+              placeholder="Address / Location"
+            />
+          </div>
         </div>
 
-        <form onSubmit={handleUpdate} className="space-y-8">
-          {/* Personal Info */}
-          <section>
-            <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.2em] text-[#3D5166]">
-              Personal Information
-            </p>
-            <div className="card divide-y divide-[#1C2530]">
-              <div className="p-4 grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Full Name</label>
-                <input 
-                  type="text"
-                  value={profile.fullName}
-                  onChange={e => setProfile({...profile, fullName: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none"
-                  placeholder="Legal Name"
-                />
-              </div>
-              <div className="p-4 grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Phone</label>
-                <input 
-                  type="text"
-                  value={profile.phone}
-                  onChange={e => setProfile({...profile, phone: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none"
-                  placeholder="+X XXX XXX XXXX"
-                />
-              </div>
-              <div className="p-4 grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Location</label>
-                <input 
-                  type="text"
-                  value={profile.address}
-                  onChange={e => setProfile({...profile, address: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none"
-                  placeholder="Primary Residence"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Medical Info */}
-          <section>
-            <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.2em] text-[#3D5166]">
-              Clinical Profile
-            </p>
-            <div className="card divide-y divide-[#1C2530]">
-              <div className="p-4 grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Blood Type</label>
-                <input 
-                  type="text"
-                  value={profile.bloodType}
-                  onChange={e => setProfile({...profile, bloodType: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none placeholder:text-[#1C2530]"
-                  placeholder="e.g. A POSITIVE"
-                />
-              </div>
-              <div className="p-4 grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Insurance</label>
-                <input 
-                  type="text"
-                  value={profile.insuranceProvider}
-                  onChange={e => setProfile({...profile, insuranceProvider: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none"
-                  placeholder="Provider & Policy Number"
-                />
-              </div>
-              <div className="p-4">
-                <label className="block font-mono text-[9px] uppercase tracking-widest text-[#3D5166] mb-3">Allergies & Medical Alerts</label>
-                <textarea 
-                  value={profile.allergies}
-                  onChange={e => setProfile({...profile, allergies: e.target.value})}
-                  className="w-full bg-transparent font-sans text-sm text-[#F0F4F8] outline-none min-h-[100px] resize-none"
-                  placeholder="List any critical allergies or chronic conditions..."
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* ICE Contact */}
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <ShieldAlert size={14} className="text-[#D95B5B]" />
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#D95B5B]">
-                In Case of Emergency (ICE)
-              </p>
-            </div>
-            <div className="card divide-y divide-[#1C2530] border-[#D95B5B20]">
-              <div className="p-4 grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Proxy Name</label>
-                <input 
-                  type="text"
-                  value={profile.emergencyContactName}
-                  onChange={e => setProfile({...profile, emergencyContactName: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none"
-                  placeholder="Primary Emergency Proxy"
-                />
-              </div>
-              <div className="p-4 grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Proxy Phone</label>
-                <input 
-                  type="text"
-                  value={profile.emergencyContactPhone}
-                  onChange={e => setProfile({...profile, emergencyContactPhone: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none"
-                  placeholder="Direct Emergency Line"
-                />
-              </div>
-            </div>
-          </section>
-
-          <div className="pt-6">
-            <button 
-              type="submit"
-              disabled={saving}
-              className="w-full card py-4 font-mono text-[11px] uppercase tracking-[0.3em] text-[#00C896] border-[#00C89650] bg-[#00C89610] press flex items-center justify-center gap-2"
-            >
-              <Save size={14} />
-              {saving ? 'Synchronizing...' : 'Save Configuration'}
-            </button>
+        {/* Clinical Profile */}
+        <div className="mx-5 mb-4 card px-4 py-4">
+          <h2 className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166] mb-4">
+            Clinical Profile
+          </h2>
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={profile.bloodType}
+              onChange={e => setProfile({...profile, bloodType: e.target.value})}
+              className={inputClass}
+              placeholder="Blood Type (e.g. A+)"
+            />
+            <input
+              type="text"
+              value={profile.insuranceProvider}
+              onChange={e => setProfile({...profile, insuranceProvider: e.target.value})}
+              className={inputClass}
+              placeholder="Insurance Provider & Policy"
+            />
+            <textarea
+              value={profile.allergies}
+              onChange={e => setProfile({...profile, allergies: e.target.value})}
+              className={`${inputClass} h-24 resize-none`}
+              placeholder="Allergies & medical alerts..."
+            />
           </div>
-        </form>
-      </div>
-    </div>
-  );
-}
+        </div>
 
+        {/* Emergency Contact */}
+        <div className="mx-5 mb-4 card px-4 py-4">
+          <h2 className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166] mb-1">
+            Emergency Contact
+          </h2>
+          <p className="font-sans text-xs text-[#3D5166] mb-4">In Case of Emergency (ICE)</p>
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={profile.emergencyContactName}
+              onChange={e => setProfile({...profile, emergencyContactName: e.target.value})}
+              className={inputClass}
+              placeholder="Contact Name"
+            />
+            <input
+              type="text"
+              value={profile.emergencyContactPhone}
+              onChange={e => setProfile({...profile, emergencyContactPhone: e.target.value})}
+              className={inputClass}
+              placeholder="Contact Phone"
+            />
+          </div>
+        </div>
+
+        <div className="mx-5 mb-4">
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full bg-[#00C896] text-[#080B0F] font-sans font-semibold text-sm py-3.5 rounded-xl press"
+          >
+            {saving ? 'Saving...' : 'Save Profile'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}

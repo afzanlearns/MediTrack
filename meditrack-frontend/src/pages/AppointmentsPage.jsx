@@ -1,308 +1,229 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { format, isBefore } from 'date-fns';
-import { Plus, Clock3, User, MapPin, Trash2, Calendar, CheckCircle, Save, X } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react'
+import { format, isBefore } from 'date-fns'
+import { Plus, Trash2, CheckCheck } from 'lucide-react'
 import {
   getAllAppointments,
   createAppointment,
   deleteAppointment,
   markCompleted,
-} from '../api/appointmentApi';
-import { toast } from '../utils/toast';
-import Modal from '../components/shared/Modal';
+} from '../api/appointmentApi'
+import { toast } from '../utils/toast'
+
+const emptyForm = {
+  doctorName: '',
+  appointmentDate: format(new Date(), 'yyyy-MM-dd'),
+  reason: '',
+  location: '',
+  notes: '',
+}
 
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState('upcoming');
-  const [formData, setFormData] = useState({
-    doctorName: '',
-    appointmentDate: format(new Date(), 'yyyy-MM-dd'),
-    reason: '',
-    location: '',
-    notes: '',
-  });
+  const [appointments, setAppointments] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [tab, setTab] = useState('upcoming')
+  const [form, setForm] = useState(emptyForm)
 
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
+  useEffect(() => { fetchAppointments() }, [])
 
   const fetchAppointments = async () => {
     try {
-      const res = await getAllAppointments();
-      setAppointments(res.data || []);
-    } catch (err) {
-      toast.error('Unable to synchronize appointment schedule');
+      const res = await getAllAppointments()
+      setAppointments(res.data || [])
+    } catch {
+      toast.error('Failed to load appointments')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const handleAddAppointment = async (e) => {
-    e.preventDefault();
-    setSaving(true);
+  const handleAdd = async (e) => {
+    e.preventDefault()
+    setSaving(true)
     try {
-      await createAppointment(formData);
-      toast.success('Consultation document scheduled');
-      setModalOpen(false);
-      setFormData({
-        doctorName: '',
-        appointmentDate: format(new Date(), 'yyyy-MM-dd'),
-        reason: '',
-        location: '',
-        notes: '',
-      });
-      fetchAppointments();
-    } catch (err) {
-      toast.error('Failed to commit appointment record');
+      await createAppointment(form)
+      toast.success('Appointment scheduled.')
+      setForm(emptyForm)
+      setShowForm(false)
+      fetchAppointments()
+    } catch {
+      toast.error('Failed to add appointment')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const handleDelete = async (id) => {
     try {
-      await deleteAppointment(id);
-      toast.success('Consultation purged');
-      fetchAppointments();
-    } catch (err) {
-      toast.error('Purge operation failed');
+      await deleteAppointment(id)
+      toast.success('Appointment removed.')
+      fetchAppointments()
+    } catch {
+      toast.error('Failed to remove appointment')
     }
-  };
+  }
 
   const handleMarkCompleted = async (id) => {
     try {
-      await markCompleted(id);
-      toast.success('Consultation verified as completed');
-      fetchAppointments();
-    } catch (err) {
-      toast.error('Verification failed');
+      await markCompleted(id)
+      toast.success('Marked as completed.')
+      fetchAppointments()
+    } catch {
+      toast.error('Failed to update appointment')
     }
-  };
+  }
 
   const { upcoming, past } = useMemo(() => {
-    const now = new Date();
-    const up = [];
-    const old = [];
-
+    const now = new Date()
+    const up = [], old = []
     appointments.forEach((item) => {
-      const date = new Date(item.appointmentDate);
-      if (item.isCompleted || isBefore(date, now)) old.push(item);
-      else up.push(item);
-    });
+      if (item.isCompleted || isBefore(new Date(item.appointmentDate), now)) old.push(item)
+      else up.push(item)
+    })
+    return {
+      upcoming: up.sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate)),
+      past: old.sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate)),
+    }
+  }, [appointments])
 
-    return { 
-      upcoming: up.sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate)), 
-      past: old.sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate)) 
-    };
-  }, [appointments]);
+  const visible = tab === 'upcoming' ? upcoming : past
 
-  const visible = tab === 'upcoming' ? upcoming : past;
+  const inputClass = "w-full bg-[#141B23] border border-[#1C2530] rounded-xl px-4 py-3 font-sans text-sm text-[#F0F4F8] placeholder:text-[#3D5166] focus:border-[#00C89650] transition-colors outline-none"
 
   return (
-    <div className="pb-16 max-w-4xl mx-auto px-5">
+    <div className="pb-8">
       {/* Header */}
-      <div className="pt-14 pb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="px-5 pt-14 pb-5 flex items-start justify-between">
         <div>
-          <h1 className="font-sans text-3xl font-semibold text-[#F0F4F8]">Appointments</h1>
-          <p className="font-mono text-xs text-[#3D5166] mt-2 italic">Clinical consultation management</p>
+          <h1 className="font-sans text-2xl font-semibold text-[#F0F4F8]">Appointments</h1>
+          <p className="font-sans text-sm text-[#3D5166] mt-0.5">{upcoming.length} upcoming</p>
         </div>
-        <button 
-          onClick={() => setModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-6 py-3 font-mono text-[10px] uppercase tracking-widest text-[#00C896] border border-[#00C89640] rounded-lg press bg-[#00C89605]"
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="w-9 h-9 rounded-full bg-[#00C896] flex items-center justify-center press"
         >
-          <Plus size={14} />
-          Document New Entry
+          <Plus size={18} strokeWidth={2.5} className="text-[#080B0F]" />
         </button>
       </div>
 
+      {/* Add form */}
+      {showForm && (
+        <div className="mx-5 mb-4 card px-4 py-4">
+          <h2 className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166] mb-4">
+            New Appointment
+          </h2>
+          <form onSubmit={handleAdd} className="space-y-3">
+            <input
+              type="text"
+              placeholder="Doctor Name"
+              value={form.doctorName}
+              onChange={e => setForm({...form, doctorName: e.target.value})}
+              className={inputClass}
+              required
+            />
+            <input
+              type="text"
+              placeholder="Reason / Specialty"
+              value={form.reason}
+              onChange={e => setForm({...form, reason: e.target.value})}
+              className={inputClass}
+            />
+            <input
+              type="date"
+              value={form.appointmentDate}
+              onChange={e => setForm({...form, appointmentDate: e.target.value})}
+              className={inputClass}
+              required
+            />
+            <input
+              type="text"
+              placeholder="Location (optional)"
+              value={form.location}
+              onChange={e => setForm({...form, location: e.target.value})}
+              className={inputClass}
+            />
+            <textarea
+              placeholder="Notes (optional)"
+              value={form.notes}
+              onChange={e => setForm({...form, notes: e.target.value})}
+              className={`${inputClass} h-20 resize-none`}
+            />
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full bg-[#00C896] text-[#080B0F] font-sans font-semibold text-sm py-3.5 rounded-xl press"
+            >
+              {saving ? 'Saving...' : 'Schedule Appointment'}
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* Tabs */}
-      <div className="mb-10 flex gap-1 border-b border-[#1C2530]">
-        {['upcoming', 'past'].map((t) => (
+      <div className="mx-5 mb-4 flex gap-5 border-b border-[#1C2530] pb-0">
+        {['upcoming', 'past'].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-6 py-3 font-mono text-[10px] uppercase tracking-[0.2em] transition-all relative ${
-              tab === t ? 'text-[#00C896]' : 'text-[#3D5166] hover:text-[#F0F4F8]'
+            className={`font-sans text-sm pb-3 press ${
+              tab === t
+                ? 'text-[#F0F4F8] font-medium border-b-2 border-[#00C896] -mb-px'
+                : 'text-[#3D5166]'
             }`}
           >
-            {t} ({t === 'upcoming' ? upcoming.length : past.length})
-            {tab === t && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#00C896]" />
-            )}
+            {t[0].toUpperCase() + t.slice(1)} ({t === 'upcoming' ? upcoming.length : past.length})
           </button>
         ))}
       </div>
 
-      {/* List */}
-      <div className="space-y-4 mb-24">
+      {/* Appointment list */}
+      <div className="space-y-3">
         {loading ? (
-          <div className="flex justify-center py-20">
-             <p className="font-mono text-[10px] text-[#3D5166] animate-pulse uppercase tracking-widest">Synchronizing schedule...</p>
+          <div className="mx-5 py-10 text-center">
+            <p className="font-mono text-xs text-[#3D5166] animate-pulse">Loading...</p>
           </div>
         ) : visible.length === 0 ? (
-          <div className="card py-20 text-center">
-             <p className="font-mono text-[10px] text-[#3D5166] uppercase tracking-[0.2em]">Zero consultations documented</p>
+          <div className="mx-5 py-12 text-center card text-sm text-[#3D5166]">
+            No {tab} appointments.
           </div>
         ) : (
           visible.map((apt) => (
-            <div key={apt.id} className="card p-5 group">
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                <div className="space-y-4 flex-1">
-                  <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-lg border flex items-center justify-center ${
-                      tab === 'upcoming' ? 'border-[#00C89630] bg-[#00C89605] text-[#00C896]' : 'border-[#1C2530] bg-[#0E151C] text-[#3D5166]'
-                    }`}>
-                      <Calendar size={20} strokeWidth={1} />
-                    </div>
-                    <div>
-                      <h3 className="font-sans text-lg font-medium text-[#F0F4F8] leading-tight">
-                        {apt.reason || 'Unspecified Consultation'}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
-                        <div className="flex items-center gap-1.5 opacity-60">
-                          <Clock3 size={12} className="text-[#3D5166]" />
-                          <span className="font-mono text-[10px] text-[#3D5166] uppercase tracking-wider">
-                            {format(new Date(apt.appointmentDate), 'MMM dd, yyyy')}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 opacity-60">
-                          <User size={12} className="text-[#3D5166]" />
-                          <span className="font-mono text-[10px] text-[#3D5166] uppercase tracking-wider">
-                             DR. {apt.doctorName || 'UNIDENTIFIED'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {apt.location && (
-                    <div className="ml-14 flex items-start gap-2 bg-[#0E151C] p-2 rounded border border-[#1C2530]">
-                      <MapPin size={10} className="text-[#3D5166] mt-0.5" />
-                      <span className="font-mono text-[10px] text-[#F0F4F8] opacity-50 uppercase tracking-widest">{apt.location}</span>
-                    </div>
-                  )}
-
-                  {apt.notes && (
-                    <p className="ml-14 font-mono text-[10px] text-[#3D5166] leading-relaxed italic border-l border-[#1C2530] pl-3">
-                      "{apt.notes}"
-                    </p>
-                  )}
+            <div key={apt.id} className="mx-5 card overflow-hidden">
+              <div className="px-4 pt-4 pb-3">
+                <div className="flex items-start justify-between mb-1">
+                  <h3 className="font-sans text-base font-semibold text-[#F0F4F8]">
+                    {apt.reason || 'Appointment'}
+                  </h3>
+                  <span className="font-mono text-[10px] text-[#3D5166] bg-[#141B23] px-2 py-0.5 rounded-md ml-2 flex-shrink-0">
+                    {format(new Date(apt.appointmentDate), 'MMM d, yyyy')}
+                  </span>
                 </div>
-
-                <div className="flex md:flex-col items-center gap-2">
-                  {tab === 'upcoming' ? (
-                    <>
-                      <button
-                        onClick={() => handleMarkCompleted(apt.id)}
-                        className="flex-1 md:w-full flex items-center justify-center gap-2 px-4 py-2 font-mono text-[9px] uppercase tracking-widest text-[#00C896] border border-[#00C89630] rounded-lg press hover:bg-[#00C89605]"
-                      >
-                        <CheckCircle size={12} />
-                        Verify Completion
-                      </button>
-                      <button
-                        onClick={() => handleDelete(apt.id)}
-                        className="p-2 text-[#3D5166] hover:text-[#D95B5B] transition-colors press"
-                        title="Cancel Appointment"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="px-3 py-1 font-mono text-[9px] uppercase tracking-widest text-[#3D5166] border border-[#1C2530] rounded flex items-center gap-1.5">
-                       <CheckCircle size={10} />
-                       Archived
-                    </div>
-                  )}
-                </div>
+                <p className="font-mono text-[11px] text-[#3D5166]">Dr. {apt.doctorName || 'Unknown'}</p>
+                {apt.location && (
+                  <p className="font-mono text-[11px] text-[#3D5166] mt-0.5">{apt.location}</p>
+                )}
               </div>
+              {tab === 'upcoming' && (
+                <div className="border-t border-[#1C2530] px-4 py-2.5 flex gap-4">
+                  <button
+                    onClick={() => handleMarkCompleted(apt.id)}
+                    className="flex items-center gap-1.5 text-[#00C896] text-xs font-sans press"
+                  >
+                    <CheckCheck size={11} /> Done
+                  </button>
+                  <button
+                    onClick={() => handleDelete(apt.id)}
+                    className="flex items-center gap-1.5 text-[#D95B5B] text-xs font-sans press"
+                  >
+                    <Trash2 size={11} /> Cancel
+                  </button>
+                </div>
+              )}
             </div>
           ))
         )}
       </div>
-
-      {/* Modernized Modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Consultation Data Initialization">
-        <form onSubmit={handleAddAppointment} className="space-y-6">
-          <div className="space-y-4">
-             <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Subject</label>
-                <input 
-                  type="text"
-                  value={formData.reason}
-                  onChange={e => setFormData({...formData, reason: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none border-b border-[#1C2530] pb-2 focus:border-[#00C896] transition-colors"
-                  placeholder="Primary Reason for Visit"
-                  required
-                />
-             </div>
-             
-             <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Practitioner</label>
-                <input 
-                  type="text"
-                  value={formData.doctorName}
-                  onChange={e => setFormData({...formData, doctorName: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none border-b border-[#1C2530] pb-2 focus:border-[#00C896] transition-colors"
-                  placeholder="Dr. Identifier"
-                  required
-                />
-             </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Timestamp</label>
-                <input 
-                  type="date"
-                  value={formData.appointmentDate}
-                  onChange={e => setFormData({...formData, appointmentDate: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none border-b border-[#1C2530] pb-2 focus:border-[#00C896] transition-colors"
-                  required
-                />
-             </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2">
-                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Facility</label>
-                <input 
-                  type="text"
-                  value={formData.location}
-                  onChange={e => setFormData({...formData, location: e.target.value})}
-                  className="md:col-span-3 bg-transparent font-sans text-sm text-[#F0F4F8] outline-none border-b border-[#1C2530] pb-2 focus:border-[#00C896] transition-colors"
-                  placeholder="Clinical Location"
-                />
-             </div>
-
-             <div className="pt-2">
-                <label className="block font-mono text-[9px] uppercase tracking-widest text-[#3D5166] mb-3">Clinical Narrative</label>
-                <textarea 
-                  value={formData.notes}
-                  onChange={e => setFormData({...formData, notes: e.target.value})}
-                  className="w-full bg-[#0E151C] border border-[#1C2530] rounded-lg p-3 font-sans text-sm text-[#F0F4F8] outline-none min-h-[100px] resize-none focus:border-[#00C89640]"
-                  placeholder="Additional observations or preparation requirements..."
-                />
-             </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <button 
-              type="button" 
-              onClick={() => setModalOpen(false)}
-              className="px-6 py-2 font-mono text-[10px] uppercase tracking-widest text-[#3D5166] hover:text-[#F0F4F8] transition-colors"
-            >
-              Abort
-            </button>
-            <button 
-              type="submit"
-              disabled={saving}
-              className="flex items-center gap-2 px-8 py-3 font-mono text-[10px] uppercase tracking-widest text-[#0A0E13] bg-[#00C896] rounded-lg press"
-            >
-              <Save size={14} />
-              {saving ? 'Synchronizing...' : 'Initialize Record'}
-            </button>
-          </div>
-        </form>
-      </Modal>
     </div>
-  );
+  )
 }
-
