@@ -5,9 +5,8 @@ import { toast } from '../utils/toast'
 
 const AuthContext = createContext()
 
-const GOOGLE_PLACEHOLDER = 'YOUR_GOOGLE_CLIENT_ID'
-const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
-const googleConfigured = Boolean(googleClientId && googleClientId !== GOOGLE_PLACEHOLDER)
+const googleClientId = '1052240755199-mf2k20ah0dtv9vdmav9629apensh763j.apps.googleusercontent.com'
+const googleConfigured = true
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
