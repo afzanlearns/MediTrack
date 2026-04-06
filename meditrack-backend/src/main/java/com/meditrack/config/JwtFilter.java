@@ -10,9 +10,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
+import java.util.Collections;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -34,8 +38,15 @@ public class JwtFilter extends OncePerRequestFilter {
                 Long userId = Long.parseLong(jwt.getSubject());
                 
                 request.setAttribute("userId", userId);
+                
+                // IMPORTANT: Tell Spring Security the user is authenticated
+                UsernamePasswordAuthenticationToken authentication = 
+                    new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                
             } catch (Exception e) {
-                // If token is invalid, don't set userId
+                // If token is invalid, don't set userId or authentication
+                SecurityContextHolder.clearContext();
             }
         }
 
