@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Loader2, Check } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Check, Clock, Calendar, Database, Activity, Circle, CheckCircle2, AlertCircle, FastForward } from 'lucide-react'
 import { format, addDays, subDays } from 'date-fns'
 import { getDosesForDate, generateDoses, updateDoseStatus } from '../api/doseApi'
 import { mapDoseView } from '../utils/viewMappers'
@@ -8,11 +7,12 @@ import { toast } from '../utils/toast'
 
 const FILTERS = ['ALL', 'PENDING', 'TAKEN', 'MISSED', 'SKIPPED']
 
-const DoseLogPage = () => {
+export default function DoseLogPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [activeFilter, setActiveFilter] = useState('ALL')
   const [doses, setDoses] = useState([])
   const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
 
   const dateKey = format(currentDate, 'yyyy-MM-dd')
@@ -24,7 +24,7 @@ const DoseLogPage = () => {
       const data = await getDosesForDate(dateKey)
       setDoses((data || []).map(mapDoseView))
     } catch {
-      setError('Unable to load doses for this date.')
+      setError('Unable to synchronize dose registry.')
     } finally {
       setLoading(false)
     }
@@ -40,12 +40,15 @@ const DoseLogPage = () => {
   }, [doses, activeFilter])
 
   const handleGenerate = async () => {
+    setGenerating(true)
     try {
       const created = await generateDoses(dateKey)
       setDoses((created || []).map(mapDoseView))
-      toast.success('Dose schedule generated.')
+      toast.success('Dose sequence generated')
     } catch {
-      toast.danger('Could not generate doses.')
+      toast.error('Failed to initialize dose sequence')
+    } finally {
+      setGenerating(false)
     }
   }
 
@@ -55,127 +58,153 @@ const DoseLogPage = () => {
       setDoses((prev) =>
         prev.map((item) => (item.id === dose.id ? mapDoseView(updated || { ...item, status }) : item)),
       )
+      toast.success(`Dose marked as ${status.toLowerCase()}`)
     } catch {
-      toast.danger('Unable to update dose status.')
+      toast.error('Unable to commit status change')
+    }
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'TAKEN': return <CheckCircle2 size={12} className="text-[#00C896]" />
+      case 'MISSED': return <AlertCircle size={12} className="text-[#D95B5B]" />
+      case 'SKIPPED': return <FastForward size={12} className="text-[#3D5166]" />
+      default: return <Circle size={12} className="text-[#1C2530]" />
     }
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="pb-8"
-    >
-      <div className="px-4 pt-12">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-[1.9rem] font-bold text-[#E8EDF2]">Dose Log</h1>
-            <p className="text-sm text-[#6E879B]">Track daily intake</p>
-          </div>
-          <button
-            onClick={handleGenerate}
-            className="rounded-lg border border-[#00D4AA44] bg-[#00D4AA14] px-3 py-2 text-xs font-semibold text-[#00D4AA]"
-          >
-            Generate
-          </button>
+    <div className="pb-16 max-w-4xl mx-auto px-5">
+      {/* Header */}
+      <div className="pt-14 pb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="font-sans text-3xl font-semibold text-[#F0F4F8]">Dose Log</h1>
+          <p className="font-mono text-xs text-[#3D5166] mt-2 italic">Medication adherence tracking</p>
         </div>
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="flex items-center gap-2 px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-[#00C896] border border-[#00C89640] rounded-lg press bg-[#00C89605]"
+        >
+          <Database size={12} />
+          {generating ? 'Processing...' : 'Generate Sequence'}
+        </button>
+      </div>
 
-        <div className="mb-4 flex items-center rounded-xl border border-[#1E2D3D] bg-[#111720]">
+      <div className="space-y-8">
+        {/* Date Selector */}
+        <div className="card flex items-center p-1 overflow-hidden">
           <button
             onClick={() => setCurrentDate(subDays(currentDate, 1))}
-            className="flex h-12 w-12 items-center justify-center border-r border-[#1E2D3D] text-[#6E879B]"
+            className="p-4 text-[#3D5166] hover:text-[#F0F4F8] transition-colors press"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
           </button>
-          <div className="flex-1 text-center text-sm font-semibold text-[#E8EDF2]">
-            {format(currentDate, 'MMMM d, yyyy')}
+          <div className="flex-1 text-center py-4 border-x border-[#1C2530] flex items-center justify-center gap-3">
+             <Calendar size={14} className="text-[#3D5166]" />
+             <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#F0F4F8]">
+               {format(currentDate, 'MMMM dd, yyyy')}
+             </span>
           </div>
           <button
             onClick={() => setCurrentDate(addDays(currentDate, 1))}
-            className="flex h-12 w-12 items-center justify-center border-l border-[#1E2D3D] text-[#6E879B]"
+            className="p-4 text-[#3D5166] hover:text-[#F0F4F8] transition-colors press"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={18} />
           </button>
         </div>
 
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        {/* Filter Bar */}
+        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
           {FILTERS.map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold transition ${
+              className={`whitespace-nowrap px-4 py-2 font-mono text-[10px] uppercase tracking-widest rounded-full transition-all border ${
                 activeFilter === filter
-                  ? 'border-[#00D4AA66] bg-[#00D4AA1A] text-[#00D4AA]'
-                  : 'border-[#1E2D3D] bg-[#111720] text-[#6E879B]'
+                  ? 'border-[#00C89660] bg-[#00C89610] text-[#00C896]'
+                  : 'border-[#1C2530] bg-transparent text-[#3D5166] hover:text-[#F0F4F8] hover:border-[#F0F4F820]'
               }`}
             >
-              {filter === 'ALL' ? 'All' : `${filter[0]}${filter.slice(1).toLowerCase()}`}
+              {filter}
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="space-y-2 px-4">
-        {loading ? (
-          <div className="flex items-center justify-center rounded-xl border border-[#1E2D3D] bg-[#111720] py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-[#00D4AA]" />
-          </div>
-        ) : error ? (
-          <div className="rounded-xl border border-[#EF444433] bg-[#EF44440D] p-4">
-            <p className="text-sm text-[#FCA5A5]">{error}</p>
-            <button onClick={loadDoses} className="mt-2 text-xs font-semibold text-[#E8EDF2] underline">
-              Retry
-            </button>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-[#1E2D3D] bg-[#111720] py-10 text-center">
-            <p className="text-sm text-[#8BA3BA]">No doses for this filter.</p>
-          </div>
-        ) : (
-          filtered.map((dose) => (
-            <div key={dose.id} className="overflow-hidden rounded-xl border border-[#1E2D3D] bg-[#111720]">
-              <div className="flex items-center gap-3 px-4 py-3.5">
-                <p className="w-16 text-xs font-mono text-[#6E879B]">{dose.timeLabel}</p>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-[#E8EDF2]">{dose.medication}</p>
-                  <p className="text-xs text-[#4A6070]">{dose.dosage}</p>
-                </div>
-                {dose.status !== 'PENDING' && (
-                  <span className="rounded-md bg-[#18222E] px-2.5 py-1 text-xs font-semibold text-[#8BA3BA]">
-                    {dose.status}
-                  </span>
-                )}
-              </div>
-
-              {dose.status === 'PENDING' && (
-                <div className="grid grid-cols-3 gap-2 border-t border-[#1E2D3D] px-3 pb-3 pt-2">
-                  <button
-                    onClick={() => handleStatus(dose, 'TAKEN')}
-                    className="flex items-center justify-center gap-1 rounded-lg bg-[#00D4AA] py-2 text-xs font-semibold text-[#0A0E13]"
-                  >
-                    <Check size={13} /> Taken
-                  </button>
-                  <button
-                    onClick={() => handleStatus(dose, 'MISSED')}
-                    className="rounded-lg border border-[#EF444466] bg-[#EF44441A] py-2 text-xs font-semibold text-[#FCA5A5]"
-                  >
-                    Missed
-                  </button>
-                  <button
-                    onClick={() => handleStatus(dose, 'SKIPPED')}
-                    className="rounded-lg border border-[#2B3D50] bg-[#18222E] py-2 text-xs font-semibold text-[#8BA3BA]"
-                  >
-                    Skip
-                  </button>
-                </div>
-              )}
+        {/* List */}
+        <div className="space-y-3 mb-24">
+          {loading ? (
+            <div className="card py-20 flex flex-col items-center justify-center gap-4">
+              <Loader2 className="h-6 w-6 animate-spin text-[#3D5166]" />
+              <p className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Accessing records...</p>
             </div>
-          ))
-        )}
+          ) : error ? (
+            <div className="card p-10 text-center border-[#D95B5B20]">
+              <p className="font-mono text-[10px] text-[#D95B5B] uppercase tracking-widest mb-4">{error}</p>
+              <button 
+                onClick={loadDoses} 
+                className="px-4 py-2 font-mono text-[9px] uppercase tracking-widest text-[#F0F4F8] border border-[#1C2530] rounded press"
+              >
+                Retry Request
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="card py-24 text-center border-dashed border-[#1C2530]">
+              <Activity className="mx-auto text-[#1C2530] mb-4 opacity-20" size={32} strokeWidth={1} />
+              <p className="font-mono text-[10px] text-[#3D5166] uppercase tracking-[0.2em]">Zero dose records found for selection</p>
+            </div>
+          ) : (
+            filtered.map((dose) => (
+              <div key={dose.id} className="card p-4 transition-all hover:border-[#F0F4F810]">
+                <div className="flex items-center gap-5">
+                  <div className="w-14 shrink-0 font-mono text-[11px] text-[#3D5166] tracking-tighter">
+                    {dose.timeLabel}
+                  </div>
+                  
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-sans text-sm font-medium text-[#F0F4F8]">{dose.medication}</p>
+                      {dose.status !== 'PENDING' && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-[#1C2530] bg-[#0E151C]">
+                           {getStatusIcon(dose.status)}
+                           <span className="font-mono text-[8px] text-[#3D5166] uppercase tracking-widest">{dose.status}</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-mono text-[10px] text-[#3D5166] mt-0.5 uppercase tracking-widest">{dose.dosage}</p>
+                  </div>
+                  
+                  {dose.status === 'PENDING' && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleStatus(dose, 'TAKEN')}
+                        className="p-2.5 rounded-lg bg-[#00C896] text-[#0A0E13] press hover:shadow-[0_0_15px_-3px_rgba(0,200,150,0.3)]"
+                        title="Mark Taken"
+                      >
+                        <Check size={14} strokeWidth={3} />
+                      </button>
+                      <button
+                        onClick={() => handleStatus(dose, 'MISSED')}
+                        className="p-2.5 rounded-lg border border-[#D95B5B40] text-[#D95B5B] press hover:bg-[#D95B5B05]"
+                        title="Mark Missed"
+                      >
+                        <AlertCircle size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleStatus(dose, 'SKIPPED')}
+                        className="p-2.5 rounded-lg border border-[#1C2530] text-[#3D5166] press hover:text-[#F0F4F8]"
+                        title="Mark Skipped"
+                      >
+                        <FastForward size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
-
-export default DoseLogPage

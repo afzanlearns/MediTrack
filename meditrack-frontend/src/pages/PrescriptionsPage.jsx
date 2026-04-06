@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { FileText, Download, Trash2, UploadCloud, User, CalendarDays } from 'lucide-react';
-import PageHeader from '../components/ui/PageHeader';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import EmptyState from '../components/ui/EmptyState';
+import { FileText, Download, Trash2, UploadCloud, User, Calendar, Save, FileBox, Activity } from 'lucide-react';
 import {
   getPrescriptions,
   uploadPrescription,
   downloadPrescription,
   deletePrescription,
 } from '../api/prescriptionApi';
+import { toast } from '../utils/toast';
 
-const PrescriptionsPage = ({ showToast }) => {
+export default function PrescriptionsPage() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     prescribedDate: format(new Date(), 'yyyy-MM-dd'),
     doctorName: '',
@@ -31,8 +28,8 @@ const PrescriptionsPage = ({ showToast }) => {
     try {
       const res = await getPrescriptions();
       setPrescriptions(res.data || []);
-    } catch {
-      showToast('Failed to load prescriptions', 'danger');
+    } catch (err) {
+      toast.error('Unable to synchronize prescription repository');
     } finally {
       setLoading(false);
     }
@@ -41,10 +38,11 @@ const PrescriptionsPage = ({ showToast }) => {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!formData.file) {
-      showToast('Please select a file to upload', 'warning');
+      toast.info('Attach physical document or scan');
       return;
     }
 
+    setSaving(true);
     const data = new FormData();
     data.append('prescribedDate', formData.prescribedDate);
     data.append('doctorName', formData.doctorName);
@@ -53,7 +51,7 @@ const PrescriptionsPage = ({ showToast }) => {
 
     try {
       await uploadPrescription(data);
-      showToast('Prescription uploaded');
+      toast.success('Document committed to secure storage');
       setFormData({
         prescribedDate: format(new Date(), 'yyyy-MM-dd'),
         doctorName: '',
@@ -61,18 +59,20 @@ const PrescriptionsPage = ({ showToast }) => {
         file: null,
       });
       fetchPrescriptions();
-    } catch {
-      showToast('Failed to upload prescription', 'danger');
+    } catch (err) {
+      toast.error('Failed to upload document source');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async (id) => {
     try {
       await deletePrescription(id);
-      showToast('Prescription removed');
+      toast.success('Document purged from repository');
       fetchPrescriptions();
-    } catch {
-      showToast('Failed to delete prescription', 'danger');
+    } catch (err) {
+      toast.error('Purge operation failed');
     }
   };
 
@@ -81,102 +81,149 @@ const PrescriptionsPage = ({ showToast }) => {
       const blobUrl = await downloadPrescription(id);
       window.open(blobUrl, '_blank');
       setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-    } catch {
-      showToast('Failed to download prescription', 'danger');
+      toast.success('Source document retrieved');
+    } catch (err) {
+      toast.error('Retrieval operation failed');
     }
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Prescriptions" subtitle="Store and review prescription files from your doctors" />
+    <div className="pb-16 max-w-6xl mx-auto px-5">
+      {/* Header */}
+      <div className="pt-14 pb-12">
+        <h1 className="font-sans text-3xl font-semibold text-[#F0F4F8]">Prescriptions</h1>
+        <p className="font-mono text-xs text-[#3D5166] mt-2 italic">Secure repository for medical documentation</p>
+      </div>
 
-      <section className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <Card className="xl:col-span-4 p-5">
-          <h2 className="text-[20px] font-semibold text-text-primary mb-4">Upload Document</h2>
-          <form onSubmit={handleUpload} className="space-y-4">
-            <Input
-              label="Doctor"
-              icon={<User className="w-4 h-4" />}
-              value={formData.doctorName}
-              onChange={(e) => setFormData({ ...formData, doctorName: e.target.value })}
-            />
-            <Input
-              label="Date"
-              type="date"
-              value={formData.prescribedDate}
-              onChange={(e) => setFormData({ ...formData, prescribedDate: e.target.value })}
-              required
-            />
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-text-primary">Notes</label>
-              <textarea
-                className="w-full border border-border rounded-md px-3 py-2.5 text-sm bg-bg-surface min-h-[90px]"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-text-primary">File</label>
-              <label className="block border border-dashed border-border rounded-lg p-5 bg-page-bg/45 text-center cursor-pointer hover:bg-page-bg transition-colors">
-                <input
-                  type="file"
-                  className="hidden"
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+        {/* Upload Column */}
+        <div className="xl:col-span-4 space-y-6">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#3D5166]">Initialize Document</p>
+          <div className="card p-6">
+            <form onSubmit={handleUpload} className="space-y-6">
+              <div className="space-y-2">
+                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Practitioner</label>
+                <input 
+                  type="text"
+                  value={formData.doctorName}
+                  onChange={e => setFormData({...formData, doctorName: e.target.value})}
+                  className="w-full bg-transparent font-sans text-sm text-[#F0F4F8] outline-none border-b border-[#1C2530] pb-2 focus:border-[#00C896] transition-colors"
+                  placeholder="Dr. Identifier"
                   required
-                  onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
                 />
-                <UploadCloud className="w-6 h-6 mx-auto text-text-secondary" />
-                <p className="text-sm text-text-primary mt-2">{formData.file ? formData.file.name : 'Select file to upload'}</p>
-                <p className="text-xs text-text-secondary mt-1">PDF, JPG, or PNG</p>
-              </label>
+              </div>
+
+              <div className="space-y-2">
+                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Issuance Date</label>
+                <input 
+                  type="date"
+                  value={formData.prescribedDate}
+                  onChange={e => setFormData({...formData, prescribedDate: e.target.value})}
+                  className="w-full bg-transparent font-sans text-sm text-[#F0F4F8] outline-none border-b border-[#1C2530] pb-2 focus:border-[#00C896] transition-colors"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Clinical Notes</label>
+                <textarea 
+                  value={formData.notes}
+                  onChange={e => setFormData({...formData, notes: e.target.value})}
+                  className="w-full bg-[#0E151C] border border-[#1C2530] rounded-lg p-3 font-sans text-sm text-[#F0F4F8] outline-none min-h-[80px] resize-none focus:border-[#00C89640]"
+                  placeholder="Brief description of the prescription..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="font-mono text-[9px] uppercase tracking-widest text-[#3D5166]">Document Source</label>
+                <label className="block border border-dashed border-[#1C2530] rounded-lg p-6 bg-[#0E151C] text-center cursor-pointer hover:border-[#00C89640] transition-colors group">
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => setFormData({ ...formData, file: e.target.files?.[0] || null })}
+                  />
+                  <div className="flex flex-col items-center gap-2">
+                    <UploadCloud size={20} className="text-[#3D5166] group-hover:text-[#00C896]" />
+                    <p className="font-mono text-[10px] text-[#3D5166] uppercase tracking-widest group-hover:text-[#F0F4F8]">
+                      {formData.file ? formData.file.name : 'Select PDF/IMG Source'}
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={saving}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 font-mono text-[10px] uppercase tracking-[0.2em] text-[#0A0E13] bg-[#00C896] rounded-lg press"
+              >
+                <Save size={14} />
+                {saving ? 'Synchronizing...' : 'Commit Document'}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Repository Grid */}
+        <div className="xl:col-span-8 space-y-6">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#3D5166]">Secure Records</p>
+          
+          {loading ? (
+             <div className="flex justify-center py-20">
+                <p className="font-mono text-[10px] text-[#3D5166] animate-pulse uppercase tracking-widest">Accessing repository...</p>
+             </div>
+          ) : prescriptions.length === 0 ? (
+            <div className="card py-24 text-center border-dashed border-[#1C2530]">
+               <FileBox className="mx-auto text-[#1C2530] mb-4" size={32} strokeWidth={1} />
+               <p className="font-mono text-[10px] text-[#3D5166] uppercase tracking-[0.2em]">Repository state: empty</p>
             </div>
-
-            <Button type="submit" className="w-full">Upload prescription</Button>
-          </form>
-        </Card>
-
-        <div className="xl:col-span-8">
-          {prescriptions.length === 0 && !loading ? (
-            <Card className="p-10">
-              <EmptyState icon={FileText} title="No prescriptions uploaded" description="Add your first prescription to keep records safe and searchable." />
-            </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {prescriptions.map((doc) => (
-                <Card key={doc.id} className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="w-11 h-11 rounded-lg bg-accent-light border border-accent/35 flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-[#4B7A4B]" />
+                <div key={doc.id} className="card p-5 group flex flex-col justify-between min-h-[160px]">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="p-2 rounded bg-[#00C89605] border border-[#00C89620] text-[#00C896]">
+                        <FileText size={18} strokeWidth={1.5} />
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleDownload(doc.id)}
+                          className="p-2 text-[#3D5166] hover:text-[#00C896] transition-colors press"
+                          title="Download Source"
+                        >
+                          <Download size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(doc.id)}
+                          className="p-2 text-[#3D5166] hover:text-[#D95B5B] transition-colors press"
+                          title="Purge Record"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleDownload(doc.id)}
-                        className="w-8 h-8 rounded-md border border-border bg-bg-surface text-text-secondary hover:text-text-primary"
-                      >
-                        <Download className="w-4 h-4 mx-auto" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(doc.id)}
-                        className="w-8 h-8 rounded-md border border-border bg-bg-surface text-text-secondary hover:text-danger"
-                      >
-                        <Trash2 className="w-4 h-4 mx-auto" />
-                      </button>
-                    </div>
+                    <h3 className="font-sans text-sm font-medium text-[#F0F4F8] leading-tight line-clamp-1 mb-2">
+                      {doc.originalName || doc.fileName}
+                    </h3>
                   </div>
 
-                  <h3 className="mt-3 text-base font-semibold text-text-primary truncate">{doc.originalName || doc.fileName}</h3>
-                  <div className="mt-3 space-y-1 text-sm text-text-secondary">
-                    <p className="flex items-center gap-2"><User className="w-4 h-4" />{doc.doctorName || 'Doctor not set'}</p>
-                    <p className="flex items-center gap-2"><CalendarDays className="w-4 h-4" />{format(new Date(doc.prescribedDate), 'MMM d, yyyy')}</p>
+                  <div className="space-y-1.5 pt-4 border-t border-[#1C2530]">
+                    <div className="flex items-center gap-2">
+                       <User size={10} className="text-[#3D5166]" />
+                       <span className="font-mono text-[9px] text-[#3D5166] uppercase tracking-widest">DR. {doc.doctorName || 'UNIDENTIFIED'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <Calendar size={10} className="text-[#3D5166]" />
+                       <span className="font-mono text-[9px] text-[#3D5166] uppercase tracking-widest">{format(new Date(doc.prescribedDate), 'MMM dd, yyyy')}</span>
+                    </div>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           )}
         </div>
-      </section>
+      </div>
     </div>
   );
-};
+}
 
-export default PrescriptionsPage;
