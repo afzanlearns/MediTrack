@@ -8,22 +8,22 @@ const sections = [
   {
     name: 'Account',
     items: [
-      { label: 'Profile Settings', icon: User, path: '/profile', locked: true },
-      { label: 'Emergency Contact', icon: ShieldAlert, path: '/emergency', locked: true },
-      { label: 'Notifications', icon: Settings },
+      { label: 'Profile Settings', icon: User, path: '/profile' },
+      { label: 'Emergency Contact', icon: ShieldAlert, path: '/emergency' },
+      { label: 'Notifications', icon: Settings, locked: true },
     ]
   },
   {
     name: 'Data',
     items: [
-      { label: 'Data Export', icon: Download },
+      { label: 'Data Export', icon: Download, action: 'export-summary' },
     ]
   },
   {
     name: 'Legal',
     items: [
-      { label: 'Terms of Service', icon: FileText },
-      { label: 'Help & Support', icon: HelpCircle },
+      { label: 'Terms of Service', icon: FileText, locked: true },
+      { label: 'Help & Support', icon: HelpCircle, locked: true },
     ]
   }
 ]
@@ -32,7 +32,34 @@ export default function MorePage() {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
 
-  const handleItemClick = (item) => {
+  const handleItemClick = async (item) => {
+    if (item.action === 'export-summary') {
+      try {
+        const token = localStorage.getItem('meditrack_token')
+        if (!token) throw new Error()
+        
+        toast.info("Generating export... Please wait")
+        const res = await fetch('http://localhost:8080/api/export/summary', {
+           headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (!res.ok) throw new Error()
+        
+        const blob = await res.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `meditrack-health-summary-${new Date().toISOString().split('T')[0]}.html`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        toast.success("Export downloaded successfully")
+      } catch (err) {
+        toast.error("Failed to generate export. Please sign in.")
+      }
+      return
+    }
+
     if (item.path && !item.locked) {
       navigate(item.path)
       return
@@ -60,13 +87,20 @@ export default function MorePage() {
                 <button 
                   key={item.label}
                   onClick={() => handleItemClick(item)}
-                  className="w-full flex items-center justify-between px-4 py-4 press"
+                  className={`w-full flex items-center justify-between px-4 py-4 press ${item.locked ? 'opacity-40 grayscale-[0.5]' : ''}`}
                 >
                   <div className="flex items-center gap-3">
-                    <item.icon size={16} strokeWidth={1.5} className="text-[#3D5166]" />
+                    <item.icon size={16} strokeWidth={1.5} className={item.locked ? 'text-[#1C2530]' : 'text-[#3D5166]'} />
                     <span className="font-sans text-sm text-[#F0F4F8]">{item.label}</span>
                   </div>
-                  <ChevronRight size={14} className="text-[#1C2530]" />
+                  <div className="flex items-center gap-2">
+                    {item.locked && (
+                      <span className="font-mono text-[7px] border border-[#1C2530] px-1.5 py-0.5 rounded text-[#3D5166] uppercase tracking-widest">
+                        Locked
+                      </span>
+                    )}
+                    <ChevronRight size={14} className="text-[#1C2530]" />
+                  </div>
                 </button>
               ))}
             </div>
