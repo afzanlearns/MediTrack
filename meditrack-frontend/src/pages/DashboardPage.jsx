@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, X, ClipboardList, Pill, CheckCircle, Shield, Check, Loader2 } from 'lucide-react'
+import { Pill, Calendar, CheckCircle, Check, Search, Activity, Heart, Clock } from 'lucide-react'
 import { format } from 'date-fns'
-import { motion } from 'framer-motion'
 import { useAuth } from '../contexts/AuthContext'
 import { useAuthModal } from '../contexts/AuthModalContext'
 import { getDashboardSummary } from '../api/dashboardApi'
@@ -10,7 +9,7 @@ import { updateDoseStatus, generateDoses } from '../api/doseApi'
 import { mapDoseView, mapSymptomView, mapVitalsView } from '../utils/viewMappers'
 import { toast } from '../utils/toast'
 
-const DashboardPage = () => {
+export default function DashboardPage() {
   const navigate = useNavigate()
   const { user, isGuest } = useAuth()
   const { openAuthModal } = useAuthModal()
@@ -19,24 +18,15 @@ const DashboardPage = () => {
   const [summary, setSummary] = useState(null)
   const [doses, setDoses] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Good morning,'
-    if (hour < 18) return 'Good afternoon,'
-    return 'Good evening,'
-  }
 
   const loadDashboard = async () => {
-    setError('')
     setLoading(true)
     try {
       const data = await getDashboardSummary()
       setSummary(data)
       setDoses((data?.todaysDoses || []).map(mapDoseView))
     } catch {
-      setError('Failed to load dashboard data.')
+      toast.danger('Failed to load dashboard data.')
     } finally {
       setLoading(false)
     }
@@ -45,18 +35,6 @@ const DashboardPage = () => {
   useEffect(() => {
     loadDashboard()
   }, [])
-
-  const stats = useMemo(() => {
-    const takenToday = doses.filter((dose) => dose.status === 'TAKEN').length
-    return [
-      { value: summary?.activeMedicationCount ?? 0, label: 'Active Meds', color: '#00D4AA', icon: Pill },
-      { value: doses.length, label: "Today's Doses", color: '#3B82F6', icon: ClipboardList },
-      { value: takenToday, label: 'Taken Today', color: '#F59E0B', icon: CheckCircle },
-    ]
-  }, [summary, doses])
-
-  const recentSymptoms = (summary?.recentSymptoms || []).map(mapSymptomView)
-  const latestVitals = summary?.latestVitals ? mapVitalsView(summary.latestVitals) : null
 
   const handleDoseStatus = async (dose, status) => {
     try {
@@ -78,154 +56,184 @@ const DashboardPage = () => {
     }
   }
 
+  const stats = useMemo(() => {
+    const takenToday = doses.filter((dose) => dose.status === 'TAKEN' || dose.status === 'taken').length
+    return [
+      { value: summary?.activeMedicationCount ?? 0, label: 'Active Meds',   icon: Pill      },
+      { value: doses.length,                       label: "Today's Doses", icon: Calendar  },
+      { value: takenToday,                        label: 'Taken Today',   icon: CheckCircle},
+    ]
+  }, [summary, doses])
+
+  const recentSymptoms = (summary?.recentSymptoms || []).map(mapSymptomView)
+  const latestVitals = summary?.latestVitals ? mapVitalsView(summary.latestVitals) : null
+
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning,'
+    if (hour < 18) return 'Good afternoon,'
+    return 'Good evening,'
+  }
+
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-      <div className="px-4 pt-12 pb-6 bg-[#111720] border-b border-[#1E2D3D]">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-[#7A8FA6] text-sm">{getGreeting()}</p>
-            <h1 className="text-[#E8EDF2] text-[2.2rem] font-bold leading-none mt-1">
-              {user?.fullName?.split(' ')[0] || 'there'}.
-            </h1>
-          </div>
-          <button className="text-[#7A8FA6] mt-2" onClick={() => toast.info('Notifications are coming soon.')}>
-            <Bell size={20} />
-          </button>
-        </div>
-        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#1E2D3D] px-3 py-1">
-          <div className="h-1.5 w-1.5 rounded-full bg-[#00D4AA] animate-pulse" />
-          <span className="font-mono text-xs text-[#4A6070]">{format(new Date(), 'EEEE, MMM d')}</span>
+    <div className="pb-8">
+      {/* Header section */}
+      <div className="px-5 pt-14 pb-6">
+        <p className="font-sans text-sm text-[#3D5166]">{getGreeting()}</p>
+        <h1 className="font-display text-[2.5rem] italic text-[#F0F4F8] leading-none mt-0.5">
+          {user?.fullName?.split(' ')[0] || 'there'}.
+        </h1>
+        <div className="flex items-center gap-2 mt-3">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#00C896]" />
+          <span className="font-mono text-xs text-[#3D5166] tracking-wide">
+            {format(new Date(), 'EEEE, MMM d')}
+          </span>
         </div>
       </div>
 
+      {/* Guest banner */}
       {isGuest && isGuestBannerVisible && (
-        <div className="mx-4 mt-3 flex items-center justify-between rounded-xl border border-[#00D4AA33] bg-[#111720] px-4 py-3">
-          <div className="flex items-center gap-2.5 text-sm text-[#8BA3BA]">
-            <Shield size={15} className="text-[#00D4AA]" /> Using guest mode
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => openAuthModal()} className="rounded-lg bg-[#00D4AA] px-3 py-1.5 text-xs font-semibold text-[#0A0E13]">
-              Sign in
-            </button>
-            <button onClick={() => setGuestBannerVisible(false)} className="text-[#4A6070]">
-              <X size={14} />
-            </button>
-          </div>
+        <div className="mx-5 mb-5 flex items-center justify-between 
+                        bg-[#0E1318] border border-[#1C2530] rounded-xl px-4 py-3">
+          <span className="font-sans text-sm text-[#8A9BAE]">Guest mode</span>
+          <button 
+            onClick={() => openAuthModal()}
+            className="font-sans text-xs font-semibold text-[#080B0F] 
+                             bg-[#00C896] px-3 py-1.5 rounded-lg press"
+          >
+            Sign in
+          </button>
         </div>
       )}
 
-      {loading ? (
-        <div className="mx-4 mt-8 flex items-center justify-center rounded-xl border border-[#1E2D3D] bg-[#111720] py-10">
-          <Loader2 className="h-6 w-6 animate-spin text-[#00D4AA]" />
-        </div>
-      ) : error ? (
-        <div className="mx-4 mt-6 rounded-xl border border-[#EF444433] bg-[#EF44440D] p-4">
-          <p className="text-sm text-[#FCA5A5]">{error}</p>
-          <button onClick={loadDashboard} className="mt-2 text-xs font-semibold text-[#E8EDF2] underline">Retry</button>
+      {/* Stat row */}
+      <div className="flex gap-3 px-5 mb-6">
+        {stats.map(({ value, label, icon: Icon }) => (
+          <div key={label} className="flex-1 card px-3 py-4">
+            <Icon size={14} strokeWidth={1.5} className="text-[#3D5166] mb-3" />
+            <p className="font-mono text-[1.75rem] font-light text-[#F0F4F8] leading-none">
+              {value}
+            </p>
+            <p className="font-sans text-[11px] text-[#3D5166] mt-1.5 leading-tight">
+              {label}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Today's Schedule */}
+      <div className="flex items-center justify-between px-5 mb-3">
+        <h2 className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166]">
+          Today's Schedule
+        </h2>
+        <button onClick={handleGenerate} className="font-sans text-xs text-[#00C896] press">Generate</button>
+      </div>
+
+      {doses.length === 0 ? (
+        <div className="mx-5 card px-4 py-8 text-center">
+          <p className="font-sans text-sm text-[#3D5166]">No doses generated for today.</p>
+          <button onClick={handleGenerate} className="font-sans text-xs text-[#00C896] mt-2 press">Generate schedule →</button>
         </div>
       ) : (
+        doses.map((dose) => {
+          const status = dose.status.toLowerCase()
+          return (
+            <div key={dose.id} className="mx-5 mb-2 card overflow-hidden flex">
+              <div className={`w-[3px] flex-shrink-0 ${
+                status === 'taken'  ? 'bg-[#00C896]' :
+                status === 'due'    ? 'bg-[#E8A838]' :
+                status === 'missed' ? 'bg-[#D95B5B]' : 'bg-[#1C2530]'
+              }`} />
+              <div className="flex-1 px-4 py-3 flex items-center justify-between">
+                <div>
+                  <p className="font-mono text-[11px] text-[#3D5166]">{dose.timeLabel}</p>
+                  <p className="font-sans text-sm font-medium text-[#F0F4F8] mt-0.5">{dose.medication}</p>
+                  <p className="font-sans text-xs text-[#3D5166]">{dose.dosage}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {status === 'taken' ? (
+                    <span className="font-mono text-[11px] text-[#00C896] flex items-center gap-1">
+                      <Check size={10} /> taken
+                    </span>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={() => handleDoseStatus(dose, 'TAKEN')}
+                        className="font-sans text-xs text-[#00C896] bg-[#00C8961A] 
+                                         px-3 py-1.5 rounded-lg press"
+                      >
+                        Take
+                      </button>
+                      <button 
+                        onClick={() => handleDoseStatus(dose, 'SKIPPED')}
+                        className="font-sans text-xs text-[#3D5166] bg-[#141B23] 
+                                         px-3 py-1.5 rounded-lg press"
+                      >
+                        Skip
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })
+      )}
+
+      {/* Recent Symptoms */}
+      {recentSymptoms.length > 0 && (
         <>
-          <div className="mx-4 mt-4 grid grid-cols-3 gap-3">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="rounded-xl border border-[#1E2D3D] bg-[#111720] p-4"
-                style={{ borderTopColor: stat.color, borderTopWidth: 2 }}
-              >
-                <stat.icon size={15} className="mb-2" style={{ color: stat.color }} />
-                <p className="font-mono text-[2rem] leading-none text-[#E8EDF2]">{stat.value}</p>
-                <p className="mt-1.5 text-xs text-[#4A6070]">{stat.label}</p>
-              </motion.div>
-            ))}
+          <div className="flex items-center justify-between px-5 mb-3 mt-8">
+            <h2 className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166]">
+              Recent Symptoms
+            </h2>
+            <button onClick={() => navigate('/symptoms')} className="font-sans text-xs text-[#00C896] press">View all</button>
           </div>
-
-          <div className="mt-6">
-            <div className="mb-3 flex items-center justify-between px-4">
-              <h2 className="text-sm font-semibold text-[#E8EDF2]">Today's Schedule</h2>
-              <button onClick={handleGenerate} className="text-xs font-semibold text-[#00D4AA]">Generate</button>
-            </div>
-            {doses.length === 0 ? (
-              <div className="mx-4 rounded-xl border border-[#1E2D3D] bg-[#111720] py-7 text-center text-sm text-[#8BA3BA]">
-                No doses generated for today.
+          {recentSymptoms.map((symptom) => (
+            <div key={symptom.id || `${symptom.name}-${symptom.trendDate}`} className="mx-5 mb-2 card px-4 py-3 flex items-center justify-between">
+              <div>
+                <p className="font-sans text-sm font-medium text-[#F0F4F8]">{symptom.name}</p>
+                <p className="font-mono text-[11px] text-[#3D5166] mt-0.5">{symptom.dateLabel || format(new Date(symptom.timestamp), 'h:mm a')}</p>
               </div>
-            ) : (
-              doses.map((dose) => (
-                <div key={dose.id} className="mx-4 mb-2 overflow-hidden rounded-xl border border-[#1E2D3D] bg-[#111720]">
-                  <div className="flex items-center justify-between px-4 py-3">
-                    <div>
-                      <p className="text-xs font-mono text-[#4A6070]">{dose.timeLabel}</p>
-                      <p className="mt-0.5 text-sm font-semibold text-[#E8EDF2]">{dose.medication}</p>
-                      <p className="text-xs text-[#4A6070]">{dose.dosage}</p>
-                    </div>
-                    {dose.status === 'PENDING' ? (
-                      <div className="flex gap-2">
-                        <button onClick={() => handleDoseStatus(dose, 'TAKEN')} className="rounded-lg bg-[#00D4AA1A] px-2.5 py-1.5 text-xs font-semibold text-[#00D4AA]">Take</button>
-                        <button onClick={() => handleDoseStatus(dose, 'SKIPPED')} className="rounded-lg bg-[#18222E] px-2.5 py-1.5 text-xs font-semibold text-[#8BA3BA]">Skip</button>
-                      </div>
-                    ) : dose.status === 'TAKEN' ? (
-                      <span className="flex items-center gap-1 rounded-lg bg-[#00D4AA1A] px-2.5 py-1.5 text-xs font-semibold text-[#00D4AA]">
-                        <Check size={11} /> Taken
-                      </span>
-                    ) : (
-                      <span className="rounded-lg bg-[#18222E] px-2.5 py-1.5 text-xs font-semibold text-[#8BA3BA]">{dose.status}</span>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="mt-6">
-            <div className="mb-3 flex items-center justify-between px-4">
-              <h2 className="text-sm font-semibold text-[#E8EDF2]">Recent Symptoms</h2>
-              <button onClick={() => navigate('/symptoms')} className="text-xs font-semibold text-[#00D4AA]">View all</button>
+              <span className={`font-mono text-xs px-2 py-0.5 rounded-md ${
+                symptom.severity <= 3 ? 'text-[#00C896] bg-[#00C8961A]' :
+                symptom.severity <= 6 ? 'text-[#E8A838] bg-[#E8A8381A]' :
+                                        'text-[#D95B5B] bg-[#D95B5B1A]'
+              }`}>
+                {symptom.severity}/10
+              </span>
             </div>
-            {recentSymptoms.length === 0 ? (
-              <div className="mx-4 rounded-xl border border-[#1E2D3D] bg-[#111720] py-5 text-center text-sm text-[#8BA3BA]">
-                No recent symptoms logged.
-              </div>
-            ) : (
-              recentSymptoms.map((symptom) => (
-                <div key={symptom.id || `${symptom.name}-${symptom.trendDate}`} className="mx-4 mb-2 flex items-center justify-between rounded-xl bg-[#111720] px-4 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-[#E8EDF2]">{symptom.name}</p>
-                    <p className="text-xs text-[#3D5166]">{symptom.dateLabel}</p>
-                  </div>
-                  <span className="rounded-full border border-[#213549] bg-[#18222E] px-2 py-0.5 text-xs text-[#8BA3BA]">
-                    {symptom.severity}/10
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-
-          {latestVitals && (
-            <div className="mx-4 mt-6 mb-8 rounded-xl border border-[#1E2D3D] bg-[#111720] p-4">
-              <h3 className="text-sm font-semibold text-[#E8EDF2]">Latest Vitals</h3>
-              <p className="mt-1 text-xs text-[#4A6070]">{latestVitals.recordedDateLabel}</p>
-              <div className="mt-3 grid grid-cols-3 gap-3 text-center">
-                <div className="rounded-lg bg-[#18222E] py-2">
-                  <p className="font-mono text-sm text-[#E8EDF2]">{latestVitals.bloodPressureLabel}</p>
-                  <p className="text-[10px] text-[#4A6070]">BP</p>
-                </div>
-                <div className="rounded-lg bg-[#18222E] py-2">
-                  <p className="font-mono text-sm text-[#E8EDF2]">{latestVitals.bloodSugar ?? '—'}</p>
-                  <p className="text-[10px] text-[#4A6070]">Sugar</p>
-                </div>
-                <div className="rounded-lg bg-[#18222E] py-2">
-                  <p className="font-mono text-sm text-[#E8EDF2]">{latestVitals.heartRate ?? '—'}</p>
-                  <p className="text-[10px] text-[#4A6070]">HR</p>
-                </div>
-              </div>
-            </div>
-          )}
+          ))}
         </>
       )}
-    </motion.div>
+
+      {/* Latest Vitals */}
+      {latestVitals && (
+        <div className="mx-5 mb-4 mt-8 card px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166]">
+              Latest Vitals
+            </h2>
+            <span className="font-mono text-[11px] text-[#3D5166]">{latestVitals.recordedDateLabel}</span>
+          </div>
+          <div className="flex">
+            {[
+              { value: latestVitals.bloodPressureLabel, unit: 'mmHg',  label: 'BP'    },
+              { value: latestVitals.bloodSugar ?? '—',    unit: 'mg/dL', label: 'Sugar' },
+              { value: latestVitals.heartRate ?? '—',     unit: 'bpm',   label: 'HR'    },
+            ].map(({ value, unit, label }, i) => (
+              <React.Fragment key={label}>
+                {i > 0 && <div className="w-px bg-[#1C2530] mx-4 self-stretch" />}
+                <div className="flex-1 text-center">
+                  <p className="font-mono text-xl font-light text-[#F0F4F8]">{value}</p>
+                  <p className="font-mono text-[10px] text-[#3D5166] mt-1">{unit}</p>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
-export default DashboardPage

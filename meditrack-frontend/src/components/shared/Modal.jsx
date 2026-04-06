@@ -1,11 +1,7 @@
 import { useEffect } from 'react'
+import { X } from 'lucide-react'
 
-/**
- * Reusable modal overlay.
- * Closes on Escape key or backdrop click.
- */
 export default function Modal({ title, onClose, children, size = 'md' }) {
-  // Close on Escape key
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handler)
@@ -14,32 +10,32 @@ export default function Modal({ title, onClose, children, size = 'md' }) {
 
   const sizeClasses = {
     sm: 'max-w-sm',
-    md: 'max-w-lg',
+    md: 'max-w-app',
     lg: 'max-w-2xl',
   }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-5"
       onClick={onClose}
     >
       <div
-        className={`bg-bg-surface rounded-xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}
+        className={`bg-[#0E1318] border border-[#1C2530] rounded-2xl shadow-2xl w-full ${sizeClasses[size]} max-h-[85vh] overflow-y-auto relative`}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-bg-border">
-          <h2 className="text-lg font-semibold text-text-secondary">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1C2530]">
+          <h2 className="font-sans text-lg font-semibold text-[#F0F4F8]">{title}</h2>
           <button
             onClick={onClose}
-            className="text-text-secondary hover:text-text-secondary text-2xl leading-none"
+            className="text-[#3D5166] hover:text-[#8A9BAE] transition-colors press"
           >
-            ×
+            <X size={20} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="px-6 py-4">{children}</div>
+        <div className="px-6 py-6 font-sans">{children}</div>
       </div>
     </div>
   )

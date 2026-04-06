@@ -19,7 +19,6 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
 
-  // Populate form when editing
   useEffect(() => {
     if (medication) {
       setForm({
@@ -55,39 +54,42 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
         notes:     form.notes || null,
       })
       onClose()
+    } catch {
+      // toast is handled in parent
     } finally {
       setSaving(false)
     }
   }
 
+  const inputClass = "w-full bg-[#141B23] border border-[#1C2530] rounded-xl px-4 py-2.5 font-sans text-sm text-[#F0F4F8] placeholder:text-[#3D5166] focus:border-[#00C89650] outline-none transition-colors"
+  const labelClass = "block text-[10px] font-mono uppercase tracking-widest text-[#3D5166] mb-1.5 ml-1"
+
   const field = (label, key, type = 'text', extra = {}) => (
     <div>
-      <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
+      <label className={labelClass}>{label}</label>
       <input
         type={type}
         value={form[key]}
         onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          errors[key] ? 'border-red-400' : 'border-bg-border'
-        }`}
+        className={`${inputClass} ${errors[key] ? 'border-[#D95B5B50]' : ''}`}
         {...extra}
       />
-      {errors[key] && <p className="text-xs text-red-500 mt-1">{errors[key]}</p>}
+      {errors[key] && <p className="text-[10px] text-[#D95B5B] mt-1 ml-1">{errors[key]}</p>}
     </div>
   )
 
   return (
     <Modal title={medication ? 'Edit Medication' : 'Add Medication'} onClose={onClose}>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         {field('Medication Name', 'name', 'text', { placeholder: 'e.g. Metformin' })}
         {field('Dosage', 'dosage', 'text', { placeholder: 'e.g. 500mg' })}
 
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">Frequency</label>
+          <label className={labelClass}>Frequency</label>
           <select
             value={form.frequency}
             onChange={e => setForm(f => ({ ...f, frequency: e.target.value }))}
-            className="w-full px-3 py-2 border border-bg-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={inputClass}
           >
             {FREQUENCIES.map(f => (
               <option key={f.value} value={f.value}>{f.label}</option>
@@ -95,31 +97,33 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
           </select>
         </div>
 
-        {field('Start Date', 'startDate', 'date')}
-        {field('End Date (optional)', 'endDate', 'date')}
+        <div className="grid grid-cols-2 gap-4">
+          {field('Start Date', 'startDate', 'date')}
+          {field('End Date', 'endDate', 'date')}
+        </div>
 
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">Notes (optional)</label>
+          <label className={labelClass}>Notes (optional)</label>
           <textarea
             value={form.notes}
             onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
             rows={3}
-            className="w-full px-3 py-2 border border-bg-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`${inputClass} h-24 resize-none`}
             placeholder="Any additional notes..."
           />
         </div>
 
-        <div className="flex justify-end gap-3 pt-2">
+        <div className="flex gap-3 pt-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-text-secondary border border-bg-border rounded-lg hover:bg-bg-elevated"
+            className="flex-1 px-4 py-3 text-sm font-medium text-[#3D5166] border border-[#1C2530] rounded-xl hover:bg-[#141B23] transition-colors press"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+            className="flex-1 px-4 py-3 text-sm font-semibold text-[#080B0F] bg-[#00C896] rounded-xl disabled:opacity-50 press"
           >
             {saving ? 'Saving…' : medication ? 'Save Changes' : 'Add Medication'}
           </button>

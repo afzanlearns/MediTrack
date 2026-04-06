@@ -1,7 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
-import { Loader2 } from 'lucide-react'
+import React, { useEffect, useMemo, useState, useRef } from 'react'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts'
 import { format } from 'date-fns'
 import { getVitals, logVitals } from '../api/vitalsApi'
 import { mapVitalsView } from '../utils/viewMappers'
@@ -18,11 +16,12 @@ const emptyForm = {
   notes: '',
 }
 
-const VitalsPage = () => {
+export default function VitalsPage() {
   const [activeTab, setActiveTab] = useState('Blood Pressure')
   const [vitals, setVitals] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
+  const formRef = useRef(null)
 
   const loadVitals = async () => {
     try {
@@ -42,18 +41,16 @@ const VitalsPage = () => {
 
   const latest = vitals[vitals.length - 1]
 
-  const trendData = useMemo(
-    () =>
-      vitals.map((item) => ({
-        name: format(new Date(item.recordedDate), 'MMM'),
-        bp: item.systolic || 0,
-        sugar: Number(item.bloodSugar || 0),
-        hr: item.heartRate || 0,
-      })),
-    [vitals],
-  )
+  const trendData = useMemo(() => 
+    vitals.map((item) => ({
+      name: format(new Date(item.recordedDate), 'MMM d'),
+      bp: item.systolic || 0,
+      sugar: Number(item.bloodSugar || 0),
+      hr: item.heartRate || 0,
+    }))
+  , [vitals])
 
-  const currentDataKey =
+  const currentDataKey = 
     activeTab === 'Blood Pressure' ? 'bp' : activeTab === 'Blood Sugar' ? 'sugar' : 'hr'
 
   const handleSubmit = async (event) => {
@@ -75,7 +72,7 @@ const VitalsPage = () => {
     try {
       const created = await logVitals(payload)
       const createdItem = created?.data ? created.data : created
-      setVitals((prev) => [...prev, mapVitalsView(createdItem || payload)])
+      setVitals((prev) => [...prev, mapVitalsView(createdItem || payload)].sort((a, b) => new Date(a.recordedDate) - new Date(b.recordedDate)))
       setForm(emptyForm)
       toast.success('Vitals logged.')
     } catch {
@@ -83,134 +80,169 @@ const VitalsPage = () => {
     }
   }
 
+  const scrollToForm = () => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const inputClass = "w-full bg-[#141B23] border border-[#1C2530] rounded-xl px-4 py-3 font-sans text-sm text-[#F0F4F8] placeholder:text-[#3D5166] focus:border-[#00C89650] transition-colors"
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="pb-6"
-    >
-      <div className="px-4 pt-12">
-        <h1 className="text-[1.9rem] font-bold tracking-tight text-[#E8EDF2]">Vitals</h1>
-        <p className="text-sm text-[#6E879B]">Health measurements</p>
+    <div className="pb-10">
+      {/* Header */}
+      <div className="px-5 pt-14 pb-5 flex items-start justify-between">
+        <div>
+          <h1 className="font-sans text-2xl font-semibold text-[#F0F4F8]">Vitals</h1>
+          <p className="font-sans text-sm text-[#3D5166] mt-0.5">Health measurements</p>
+        </div>
+        <button 
+          onClick={scrollToForm}
+          className="font-sans text-sm font-medium text-[#080B0F] bg-[#00C896] px-4 py-2 rounded-xl press"
+        >
+          + Log
+        </button>
       </div>
 
-      {loading ? (
-        <div className="mx-4 mt-8 flex items-center justify-center rounded-xl border border-[#1E2D3D] bg-[#111720] py-10">
-          <Loader2 className="h-6 w-6 animate-spin text-[#00D4AA]" />
-        </div>
-      ) : (
-        <>
-          <div className="mx-4 mt-4 flex items-stretch rounded-xl border border-[#1E2D3D] bg-[#111720] p-5">
-            <div className="flex-1 text-center">
-              <p className="font-mono text-4xl font-light text-[#E8EDF2]">{latest?.bloodPressureLabel || '—'}</p>
-              <p className="mt-1 text-xs uppercase tracking-widest text-[#4A6070]">mmHg</p>
-            </div>
-            <div className="mx-2 h-16 w-px bg-[#1E2D3D]" />
-            <div className="flex-1 text-center">
-              <p className="font-mono text-4xl font-light text-[#E8EDF2]">{latest?.bloodSugar ?? '—'}</p>
-              <p className="mt-1 text-xs uppercase tracking-widest text-[#4A6070]">mg/dL</p>
-            </div>
-            <div className="mx-2 h-16 w-px bg-[#1E2D3D]" />
-            <div className="flex-1 text-center">
-              <p className="font-mono text-4xl font-light text-[#E8EDF2]">{latest?.heartRate ?? '—'}</p>
-              <p className="mt-1 text-xs uppercase tracking-widest text-[#4A6070]">bpm</p>
-            </div>
-          </div>
-
-          <div className="mx-4 mt-3 rounded-xl border border-[#1E2D3D] bg-[#111720] p-4">
-            <h2 className="mb-3 text-sm font-semibold text-[#E8EDF2]">Trend Overview</h2>
-            <div className="mb-4 flex gap-1 rounded-lg bg-[#18222E] p-1">
-              {TABS.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 rounded-md py-1.5 text-xs transition ${
-                    activeTab === tab ? 'bg-[#00D4AA] font-semibold text-[#0A0E13]' : 'text-[#7A8FA6]'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-            <div className="h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendData} margin={{ top: 10, right: 4, left: -24, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="vitalsGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#00D4AA" stopOpacity="0.18" />
-                      <stop offset="100%" stopColor="#00D4AA" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1E2D3D" vertical={false} />
-                  <XAxis dataKey="name" stroke="#3D5166" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#3D5166" fontSize={11} tickLine={false} axisLine={false} />
-                  <Area
-                    type="monotone"
-                    dataKey={currentDataKey}
-                    stroke="#00D4AA"
-                    strokeWidth={2}
-                    fill="url(#vitalsGrad)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="mx-4 mb-10 mt-3 rounded-xl border border-[#1E2D3D] bg-[#111720] p-4">
-            <h2 className="mb-3 text-sm font-semibold text-[#E8EDF2]">Log Today's Vitals</h2>
-            <div className="space-y-3">
-              <input
-                type="date"
-                value={form.recordedDate}
-                onChange={(e) => setForm((prev) => ({ ...prev, recordedDate: e.target.value }))}
-                className="w-full rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] outline-none"
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="number"
-                  value={form.systolic}
-                  onChange={(e) => setForm((prev) => ({ ...prev, systolic: e.target.value }))}
-                  placeholder="Systolic (120)"
-                  className="rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none"
-                />
-                <input
-                  type="number"
-                  value={form.diastolic}
-                  onChange={(e) => setForm((prev) => ({ ...prev, diastolic: e.target.value }))}
-                  placeholder="Diastolic (80)"
-                  className="rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none"
-                />
-                <input
-                  type="number"
-                  value={form.bloodSugar}
-                  onChange={(e) => setForm((prev) => ({ ...prev, bloodSugar: e.target.value }))}
-                  placeholder="Blood Sugar"
-                  className="rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none"
-                />
-                <input
-                  type="number"
-                  value={form.heartRate}
-                  onChange={(e) => setForm((prev) => ({ ...prev, heartRate: e.target.value }))}
-                  placeholder="Heart Rate"
-                  className="rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none"
-                />
+      {/* Big readings card */}
+      <div className="mx-5 mb-4 card px-5 py-5 overflow-x-auto">
+        <div className="flex items-stretch min-w-[320px]">
+          {[
+            { value: latest?.bloodPressureLabel || '—', unit: 'mmHg', status: 'Normal', label: 'Blood Pressure' },
+            { value: latest?.bloodSugar ?? '—',     unit: 'mg/dL',status: 'Normal', label: 'Blood Sugar'    },
+            { value: latest?.heartRate ?? '—',      unit: 'bpm',  status: 'Normal', label: 'Heart Rate'     },
+          ].map(({ value, unit, status, label }, i) => (
+            <React.Fragment key={label}>
+              {i > 0 && <div className="w-px bg-[#1C2530] mx-4" />}
+              <div className="flex-1 text-center">
+                <p className="font-mono text-[2rem] font-light text-[#F0F4F8] leading-none">
+                  {value}
+                </p>
+                <p className="font-mono text-[10px] text-[#3D5166] tracking-wider mt-2 uppercase">
+                  {unit}
+                </p>
+                <p className="font-sans text-[11px] text-[#00C896] mt-1.5">{status}</p>
               </div>
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-                placeholder="Notes (optional)"
-                className="min-h-[90px] w-full resize-none rounded-lg border border-[#1E2D3D] bg-[#18222E] px-3 py-2.5 text-sm text-[#E8EDF2] placeholder:text-[#3D5166] outline-none"
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      {/* Chart card */}
+      <div className="mx-5 mb-4 card px-4 py-4">
+        <h2 className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166] mb-4">
+          Trend Overview
+        </h2>
+        
+        <div className="flex gap-5 mb-4 overflow-x-auto no-scrollbar">
+          {TABS.map(tab => (
+            <button key={tab} 
+              onClick={() => setActiveTab(tab)}
+              className={`font-sans text-sm whitespace-nowrap press ${
+                activeTab === tab 
+                  ? 'text-[#F0F4F8] font-medium border-b border-[#00C896] pb-1' 
+                  : 'text-[#3D5166]'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="h-[200px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={trendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor="#00C896" stopOpacity={0.12} />
+                  <stop offset="100%" stopColor="#00C896" stopOpacity={0}    />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="#1C2530" strokeDasharray="3 3" vertical={false} />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fill: '#3D5166', fontSize: 10, fontFamily: 'IBM Plex Mono' }} 
+                axisLine={false}
+                tickLine={false}
               />
-              <button type="submit" className="w-full rounded-lg bg-[#00D4AA] py-3 text-sm font-semibold text-[#0A0E13]">
-                Log Vitals
-              </button>
-            </div>
-          </form>
-        </>
-      )}
-    </motion.div>
+              <YAxis 
+                tick={{ fill: '#3D5166', fontSize: 10, fontFamily: 'IBM Plex Mono' }} 
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#0E1318', border: '1px solid #1C2530', borderRadius: '8px' }}
+                itemStyle={{ color: '#00C896', fontSize: '12px' }}
+              />
+              <Area 
+                type="monotone"
+                dataKey={currentDataKey}
+                stroke="#00C896"
+                strokeWidth={1.5}
+                fill="url(#fill)"
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 0, fill: '#00C896' }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Log form */}
+      <div ref={formRef} className="mx-5 mb-4 card px-4 py-4">
+        <h2 className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166] mb-4">
+          Log Today's Vitals
+        </h2>
+        <form onSubmit={handleSubmit}>
+          <input 
+            type="date" 
+            value={form.recordedDate}
+            onChange={(e) => setForm(prev => ({ ...prev, recordedDate: e.target.value }))}
+            className={inputClass} 
+          />
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <input 
+              type="number"
+              placeholder="Systolic (120)" 
+              value={form.systolic}
+              onChange={(e) => setForm(prev => ({ ...prev, systolic: e.target.value }))}
+              className={inputClass} 
+            />
+            <input 
+              type="number"
+              placeholder="Diastolic (80)" 
+              value={form.diastolic}
+              onChange={(e) => setForm(prev => ({ ...prev, diastolic: e.target.value }))}
+              className={inputClass} 
+            />
+            <input 
+              type="number"
+              placeholder="Blood Sugar" 
+              value={form.bloodSugar}
+              onChange={(e) => setForm(prev => ({ ...prev, bloodSugar: e.target.value }))}
+              className={inputClass} 
+            />
+            <input 
+              type="number"
+              placeholder="Heart Rate" 
+              value={form.heartRate}
+              onChange={(e) => setForm(prev => ({ ...prev, heartRate: e.target.value }))}
+              className={inputClass} 
+            />
+          </div>
+          <textarea 
+            placeholder="Notes (optional)" 
+            value={form.notes}
+            onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+            className={`${inputClass} mt-3 h-20 resize-none`} 
+          />
+          <button 
+            type="submit"
+            className="w-full mt-4 bg-[#00C896] text-[#080B0F] font-sans font-semibold text-sm py-3.5 rounded-xl press"
+          >
+            Save Reading
+          </button>
+        </form>
+      </div>
+    </div>
   )
 }
 
-export default VitalsPage
