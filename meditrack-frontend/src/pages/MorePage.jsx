@@ -43,7 +43,7 @@ const sections = [
 
 export default function MorePage() {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, isGuest } = useAuth()
   const { isInstallable, promptInstall } = useInstallPrompt()
 
   const handleItemClick = async (item) => {
@@ -131,17 +131,19 @@ export default function MorePage() {
         )}
 
         {/* Sign Out */}
-        <div className="mx-5 pt-2 pb-12">
-          <button
-            onClick={logout}
-            className="w-full font-sans text-sm font-medium text-[#D95B5B] py-3.5 rounded-xl border border-[#D95B5B30] bg-[#D95B5B08] press"
-          >
-            Sign Out
-          </button>
-          {user && (
-            <p className="text-center font-mono text-[10px] text-[#3D5166] mt-4">{user?.email}</p>
-          )}
-        </div>
+        {!isGuest && (
+          <div className="mx-5 pt-2 pb-12">
+            <button
+              onClick={logout}
+              className="w-full font-sans text-sm font-medium text-[#D95B5B] py-3.5 rounded-xl border border-[#D95B5B30] bg-[#D95B5B08] press"
+            >
+              Sign Out
+            </button>
+            {user && (
+              <p className="text-center font-mono text-[10px] text-[#3D5166] mt-4">{user?.email}</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
