@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { toast } from '../utils/toast'
+import { useInstallPrompt } from '../hooks/useInstallPrompt'
 
 const sections = [
   {
@@ -43,6 +44,7 @@ const sections = [
 export default function MorePage() {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const { isInstallable, promptInstall } = useInstallPrompt()
 
   const handleItemClick = async (item) => {
     if (item.action === 'export-summary') {
@@ -115,6 +117,18 @@ export default function MorePage() {
             </div>
           </div>
         ))}
+
+        {/* Install Block */}
+        {isInstallable && (
+          <div className="mx-5 pt-2 pb-2">
+            <button
+              onClick={promptInstall}
+              className="w-full font-sans text-sm font-medium text-[#080B0F] py-3.5 rounded-xl border border-[#00C896] bg-[#00C896] press"
+            >
+              Install MediTrack App
+            </button>
+          </div>
+        )}
 
         {/* Sign Out */}
         <div className="mx-5 pt-2 pb-12">

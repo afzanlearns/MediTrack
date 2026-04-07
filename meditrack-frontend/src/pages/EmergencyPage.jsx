@@ -27,6 +27,30 @@ export default function EmergencyPage() {
       }
     }
     load()
+
+    // Trigger vibration on Emergency Mode activation
+    if ('vibrate' in navigator) {
+      navigator.vibrate([500, 200, 500, 200, 500])
+    }
+
+    // Request screen wake lock so it doesn't dim while paramedics read it
+    let wakeLock = null
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen')
+        }
+      } catch (err) {
+        console.warn('Wake Lock error:', err)
+      }
+    }
+    requestWakeLock()
+
+    return () => {
+      if (wakeLock) {
+        wakeLock.release()
+      }
+    }
   }, [])
 
   if (loading) return (

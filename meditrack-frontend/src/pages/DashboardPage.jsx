@@ -8,6 +8,7 @@ import { getDashboardSummary } from '../api/dashboardApi'
 import { updateDoseStatus, generateDoses } from '../api/doseApi'
 import { mapDoseView, mapSymptomView, mapVitalsView } from '../utils/viewMappers'
 import { toast } from '../utils/toast'
+import { requestNotificationPermission, subscribeToPushNotifications } from '../services/pushService'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -18,13 +19,36 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState(null)
   const [doses, setDoses] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isSlowNetwork, setIsSlowNetwork] = useState(false)
+
+  useEffect(() => {
+    // Network Information API
+    if ('connection' in navigator) {
+      const connection = navigator.connection
+      setIsSlowNetwork(connection.effectiveType === '2g' || connection.effectiveType === 'slow-2g')
+      const updateNetworkStatus = () => {
+        setIsSlowNetwork(connection.effectiveType === '2g' || connection.effectiveType === 'slow-2g')
+      }
+      connection.addEventListener('change', updateNetworkStatus)
+      return () => connection.removeEventListener('change', updateNetworkStatus)
+    }
+  }, [])
 
   const loadDashboard = async () => {
     setLoading(true)
     try {
       const data = await getDashboardSummary()
       setSummary(data)
-      setDoses((data?.todaysDoses || []).map(mapDoseView))
+      const mappedDoses = (data?.todaysDoses || []).map(mapDoseView)
+      setDoses(mappedDoses)
+      
+      // Update App Badge
+      const pendingCount = mappedDoses.filter(d => d.status === 'PENDING' || d.status === 'due').length
+      if ('setAppBadge' in navigator && pendingCount > 0) {
+        navigator.setAppBadge(pendingCount)
+      } else if ('clearAppBadge' in navigator) {
+        navigator.clearAppBadge()
+      }
     } catch {
       toast.danger('Failed to load dashboard data.')
     } finally {
@@ -34,7 +58,23 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadDashboard()
-  }, [])
+    if (!isGuest && user) {
+      // Auto prompt push sub or do it quietly if already granted
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+         subscribeToPushNotifications().catch(console.error)
+      }
+    }
+  }, [isGuest, user])
+
+  const handleEnableNotifications = async () => {
+    try {
+      await requestNotificationPermission()
+      await subscribeToPushNotifications()
+      toast.success('Push notifications enabled')
+    } catch (err) {
+      toast.danger('Could not enable notifications')
+    }
+  }
 
   const handleDoseStatus = async (dose, status) => {
     try {
@@ -102,6 +142,21 @@ export default function DashboardPage() {
                              bg-[#00C896] px-3 py-1.5 rounded-lg press"
           >
             Sign in
+          </button>
+        </div>
+      )}
+
+      {/* Push Notification Banner */}
+      {!isGuest && typeof Notification !== 'undefined' && Notification.permission === 'default' && (
+        <div className="mx-5 mb-5 flex items-center justify-between 
+                        bg-[#0E1318] border border-[#1C2530] rounded-xl px-4 py-3">
+          <span className="font-sans text-xs text-[#8A9BAE]">Enable reminders</span>
+          <button 
+            onClick={handleEnableNotifications}
+            className="font-sans text-xs font-semibold text-[#080B0F] 
+                             bg-[#00C896] px-3 py-1.5 rounded-lg press"
+          >
+            Enable
           </button>
         </div>
       )}
@@ -216,21 +271,25 @@ export default function DashboardPage() {
             </h2>
             <span className="font-mono text-[11px] text-[#3D5166]">{latestVitals.recordedDateLabel}</span>
           </div>
-          <div className="flex">
-            {[
-              { value: latestVitals.bloodPressureLabel, unit: 'mmHg',  label: 'BP'    },
-              { value: latestVitals.bloodSugar ?? '—',    unit: 'mg/dL', label: 'Sugar' },
-              { value: latestVitals.heartRate ?? '—',     unit: 'bpm',   label: 'HR'    },
-            ].map(({ value, unit, label }, i) => (
-              <React.Fragment key={label}>
-                {i > 0 && <div className="w-px bg-[#1C2530] mx-4 self-stretch" />}
-                <div className="flex-1 text-center">
-                  <p className="font-mono text-xl font-light text-[#F0F4F8]">{value}</p>
-                  <p className="font-mono text-[10px] text-[#3D5166] mt-1">{unit}</p>
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
+          {isSlowNetwork ? (
+            <p className="font-mono text-xs text-[#E8A838] mt-2">Charts hidden to save data on slow network.</p>
+          ) : (
+            <div className="flex">
+              {[
+                { value: latestVitals.bloodPressureLabel, unit: 'mmHg',  label: 'BP'    },
+                { value: latestVitals.bloodSugar ?? '—',    unit: 'mg/dL', label: 'Sugar' },
+                { value: latestVitals.heartRate ?? '—',     unit: 'bpm',   label: 'HR'    },
+              ].map(({ value, unit, label }, i) => (
+                <React.Fragment key={label}>
+                  {i > 0 && <div className="w-px bg-[#1C2530] mx-4 self-stretch" />}
+                  <div className="flex-1 text-center">
+                    <p className="font-mono text-xl font-light text-[#F0F4F8]">{value}</p>
+                    <p className="font-mono text-[10px] text-[#3D5166] mt-1">{unit}</p>
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
