@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { Heart } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAuthModal } from '../contexts/AuthModalContext'
+import { useInstallPrompt } from '../hooks/useInstallPrompt'
 
 export default function LandingPage() {
   const navigate = useNavigate()
   const { enterGuestMode } = useAuth()
   const { openAuthModal } = useAuthModal()
+  const { isInstallable, promptInstall } = useInstallPrompt()
 
   const handleGetStarted = () => {
     enterGuestMode()
@@ -58,10 +60,19 @@ export default function LandingPage() {
 
         {/* CTAs — stacked, full width */}
         <div className="flex flex-col gap-3">
+          {isInstallable && (
+            <button 
+              onClick={promptInstall}
+              className="w-full bg-[#00C896] text-[#080B0F] font-sans font-semibold 
+                         text-sm py-4 rounded-xl press"
+            >
+              Install MediTrack App
+            </button>
+          )}
           <button 
             onClick={handleGetStarted}
-            className="w-full bg-[#00C896] text-[#080B0F] font-sans font-semibold 
-                       text-sm py-4 rounded-xl press"
+            className={`w-full ${isInstallable ? 'bg-[#0E1318] border border-[#1C2530] text-[#8A9BAE]' : 'bg-[#00C896] text-[#080B0F]'} font-sans font-semibold 
+                       text-sm py-4 rounded-xl press`}
           >
             Get Started Free
           </button>
