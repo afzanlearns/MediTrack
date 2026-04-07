@@ -8,6 +8,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: {
+        injectionPoint: 'self.__WB_MANIFEST',
+      },
       manifest: {
         name: 'MediTrack',
         short_name: 'MediTrack',
@@ -18,6 +24,39 @@ export default defineConfig({
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
+        shortcuts: [
+          {
+            name: "Today's Doses",
+            url: "/doses",
+            description: "Log your medication doses for today"
+          },
+          {
+            name: "Log Vitals",
+            url: "/vitals",
+            description: "Record your blood pressure, sugar, or weight"
+          },
+          {
+            name: "Emergency Info",
+            url: "/emergency",
+            description: "Show ICE contacts and critical conditions"
+          }
+        ],
+        share_target: {
+          action: '/prescriptions',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url',
+            files: [
+              {
+                name: 'prescription',
+                accept: ['image/*', 'application/pdf']
+              }
+            ]
+          }
+        },
         icons: [
           {
             src: 'icons/icon-192.png',
@@ -34,23 +73,6 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
-          }
-        ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            // Cache API calls for offline fallback
-            urlPattern: /^http:\/\/localhost:8080\/api\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              }
-            }
           }
         ]
       }
