@@ -16,6 +16,7 @@ public class MedicationDTO {
     private LocalDate startDate;
     private LocalDate endDate;
     private String notes;
+    private String customTimings;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -46,6 +47,9 @@ public class MedicationDTO {
 
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    public String getCustomTimings() { return customTimings; }
+    public void setCustomTimings(String customTimings) { this.customTimings = customTimings; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

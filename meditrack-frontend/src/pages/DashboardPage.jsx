@@ -203,7 +203,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="font-mono text-[11px] text-[#3D5166]">{dose.timeLabel}</p>
                   <p className="font-sans text-sm font-medium text-[#F0F4F8] mt-0.5">{dose.medication}</p>
-                  <p className="font-sans text-xs text-[#3D5166]">{dose.dosage}</p>
+                  <p className="font-sans text-xs text-[#3D5166]">{dose.dosageLabel}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {status === 'taken' ? (

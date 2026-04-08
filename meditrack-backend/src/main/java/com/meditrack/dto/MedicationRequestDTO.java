@@ -26,6 +26,7 @@ public class MedicationRequestDTO {
     private LocalDate endDate;  // Optional — null means ongoing
 
     private String notes;       // Optional
+    private String customTimings; // Optional (only for CUSTOM frequency)
 
     // ─── Getters & Setters ──────────────────────────────────────────────────
     public String getName() { return name; }
@@ -45,4 +46,7 @@ public class MedicationRequestDTO {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public String getCustomTimings() { return customTimings; }
+    public void setCustomTimings(String customTimings) { this.customTimings = customTimings; }
 }

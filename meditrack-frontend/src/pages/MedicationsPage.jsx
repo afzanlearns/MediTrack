@@ -130,7 +130,7 @@ export default function MedicationsPage() {
                 {/* Chips — dosage in accent-tinted mono, frequency plain */}
                 <div className="flex gap-2 mt-1">
                   <span className="font-mono text-xs text-[#00C896] bg-[#00C8961A] px-2 py-0.5 rounded-md">
-                    {med.dosage}
+                    {med.dosageLabel}
                   </span>
                   <span className="font-mono text-xs text-[#3D5166] bg-[#141B23] px-2 py-0.5 rounded-md">
                     {med.frequencyLabel}

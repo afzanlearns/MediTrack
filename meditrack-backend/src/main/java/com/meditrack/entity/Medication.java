@@ -43,6 +43,9 @@ public class Medication {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "custom_timings", columnDefinition = "TEXT")
+    private String customTimings; // e.g. "08:00 AM, 02:00 PM"
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -95,6 +98,9 @@ public class Medication {
 
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    public String getCustomTimings() { return customTimings; }
+    public void setCustomTimings(String customTimings) { this.customTimings = customTimings; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

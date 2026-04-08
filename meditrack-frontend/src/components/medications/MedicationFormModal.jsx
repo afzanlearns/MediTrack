@@ -7,11 +7,12 @@ const FREQUENCIES = [
   { value: 'THREE_TIMES_DAILY', label: 'Three times daily' },
   { value: 'EVERY_8_HOURS',     label: 'Every 8 hours' },
   { value: 'WEEKLY',            label: 'Weekly' },
+  { value: 'CUSTOM',            label: 'Custom timings' },
 ]
 
 const EMPTY_FORM = {
   name: '', dosage: '', frequency: 'ONCE_DAILY',
-  startDate: '', endDate: '', notes: '',
+  startDate: '', endDate: '', notes: '', customTimings: '',
 }
 
 export default function MedicationFormModal({ medication, onSave, onClose }) {
@@ -28,6 +29,7 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
         startDate: medication.startDate ?? '',
         endDate:   medication.endDate ?? '',
         notes:     medication.notes ?? '',
+        customTimings: medication.customTimings ?? '',
       })
     }
   }, [medication])
@@ -52,6 +54,7 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
         startDate: form.startDate,
         endDate:   form.endDate || null,
         notes:     form.notes || null,
+        customTimings: form.frequency === 'CUSTOM' ? form.customTimings : null,
       })
       onClose()
     } catch {
@@ -82,7 +85,11 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
     <Modal title={medication ? 'Edit Medication' : 'Add Medication'} onClose={onClose}>
       <div className="flex flex-col gap-5">
         {field('Medication Name', 'name', 'text', { placeholder: 'e.g. Metformin' })}
-        {field('Dosage', 'dosage', 'text', { placeholder: 'e.g. 500mg' })}
+        
+        <div className="relative">
+          {field('Dosage', 'dosage', 'text', { placeholder: 'e.g. 500' })}
+          <span className="absolute right-4 bottom-[11px] text-xs font-mono text-[#3D5166]">mg</span>
+        </div>
 
         <div>
           <label className={labelClass}>Frequency</label>
@@ -96,6 +103,20 @@ export default function MedicationFormModal({ medication, onSave, onClose }) {
             ))}
           </select>
         </div>
+
+        {form.frequency === 'CUSTOM' && (
+          <div>
+            <label className={labelClass}>Specific Times (AM/PM or 24h)</label>
+            <input
+              type="text"
+              value={form.customTimings}
+              onChange={e => setForm(f => ({ ...f, customTimings: e.target.value }))}
+              className={inputClass}
+              placeholder="e.g. 08:00 AM, 02:00 PM, 22:30"
+            />
+            <p className="text-[10px] text-[#3D5166] mt-1.5 ml-1">Separate times with commas.</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           {field('Start Date', 'startDate', 'date')}

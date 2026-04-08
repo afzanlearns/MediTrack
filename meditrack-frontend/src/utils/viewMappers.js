@@ -19,6 +19,7 @@ export const medFrequencyLabel = (frequency = '') => {
     THREE_TIMES_DAILY: '3x daily',
     EVERY_8_HOURS: 'Every 8 hours',
     WEEKLY: 'Weekly',
+    CUSTOM: 'Custom',
   }
   return map[frequency] || frequency || '—'
 }
@@ -27,6 +28,7 @@ export const mapMedicationView = (med) => ({
   id: med.id,
   name: med.name,
   dosage: med.dosage,
+  dosageLabel: med.dosage ? (med.dosage.toLowerCase().includes('mg') ? med.dosage : `${med.dosage} mg`) : '—',
   frequency: med.frequency,
   frequencyLabel: medFrequencyLabel(med.frequency),
   startDate: med.startDate,
@@ -41,6 +43,9 @@ export const mapDoseView = (dose) => {
     scheduledAt,
     medication: dose.medicationName || dose.medication || 'Medication',
     dosage: dose.medicationDosage || dose.dosage || '—',
+    dosageLabel: (dose.medicationDosage || dose.dosage) ? 
+      ((dose.medicationDosage || dose.dosage).toLowerCase().includes('mg') ? (dose.medicationDosage || dose.dosage) : `${(dose.medicationDosage || dose.dosage)} mg`) 
+      : '—',
     timeLabel: dose.time || formatApiTime(scheduledAt),
     dateKey: dose.date || (scheduledAt ? format(new Date(scheduledAt), 'yyyy-MM-dd') : null),
   }

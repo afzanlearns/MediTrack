@@ -1,6 +1,22 @@
 import axiosInstance from './axiosInstance'
 import { guestStorage } from '../services/guestStorage'
 
+const parseCustomGuestTimes = (str) => {
+  return str.split(',').map(s => {
+    const t = s.trim().toUpperCase()
+    if (!t) return null
+    // Try to parse AM/PM
+    const match = t.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/)
+    if (!match) return t // Fallback to raw string if it's already 24h or weird
+    
+    let [_, hh, mm, p] = match
+    let h = parseInt(hh)
+    if (p === 'PM' && h < 12) h += 12
+    if (p === 'AM' && h === 12) h = 0
+    return `${String(h).padStart(2, '0')}:${mm}`
+  }).filter(Boolean)
+}
+
 const isGuest = () =>
   !localStorage.getItem('meditrack_token') &&
   localStorage.getItem('meditrack_guest') === 'true'
@@ -47,14 +63,21 @@ export const generateDoses = async (date) => {
     const slots = ['08:00', '14:00', '20:00']
     const generated = meds.flatMap((med) => {
       const frequency = med.frequency || 'ONCE_DAILY'
-      const count =
-        frequency === 'THREE_TIMES_DAILY' || frequency === 'EVERY_8_HOURS'
-          ? 3
-          : frequency === 'TWICE_DAILY'
-            ? 2
-            : 1
+      
+      let times = []
+      if (frequency === 'CUSTOM' && med.customTimings) {
+        times = parseCustomGuestTimes(med.customTimings)
+      } else {
+        const count =
+          frequency === 'THREE_TIMES_DAILY' || frequency === 'EVERY_8_HOURS'
+            ? 3
+            : frequency === 'TWICE_DAILY'
+              ? 2
+              : 1
+        times = slots.slice(0, count)
+      }
 
-      return slots.slice(0, count).map((time) =>
+      return times.map((time) =>
         guestStorage.saveDose({
           medicationId: med.id,
           medicationName: med.name,

@@ -99,7 +99,7 @@ public class DoseLogService {
         List<Medication> activeMedications = medicationRepository.findActiveMedicationsForDate(date);
 
         for (Medication med : activeMedications) {
-            List<LocalTime> times = getDoseTimes(med.getFrequency(), med.getStartDate(), date);
+            List<LocalTime> times = getDoseTimes(med, date);
 
             for (LocalTime time : times) {
                 LocalDateTime scheduledDateTime = date.atTime(time);
@@ -167,13 +167,15 @@ public class DoseLogService {
     // ─── Internal Helpers ────────────────────────────────────────────────────
 
     /**
-     * Determines the dose times for a given frequency and date.
+     * Determines the dose times for a given medication and date.
      * WEEKLY only produces a dose if the given date falls on the same weekday
      * as the medication's start date.
+     * CUSTOM parses a comma-separated string of times with AM/PM support.
      */
-    private List<LocalTime> getDoseTimes(MedicationFrequency frequency,
-                                          LocalDate startDate, LocalDate date) {
+    private List<LocalTime> getDoseTimes(Medication med, LocalDate date) {
         List<LocalTime> times = new ArrayList<>();
+        MedicationFrequency frequency = med.getFrequency();
+        LocalDate startDate = med.getStartDate();
 
         switch (frequency) {
             case ONCE_DAILY:
@@ -199,8 +201,44 @@ public class DoseLogService {
                     times.add(LocalTime.of(8, 0));
                 }
                 break;
+            case CUSTOM:
+                if (med.getCustomTimings() != null && !med.getCustomTimings().isBlank()) {
+                    times.addAll(parseCustomTimings(med.getCustomTimings()));
+                }
+                break;
         }
 
+        return times;
+    }
+
+    /**
+     * Parses a string like "08:00 AM, 02:00 PM, 22:30" into a list of LocalTime.
+     * Supports both 12h (with AM/PM) and 24h formats.
+     */
+    private List<LocalTime> parseCustomTimings(String customTimings) {
+        List<LocalTime> times = new ArrayList<>();
+        String[] parts = customTimings.split(",");
+        
+        java.time.format.DateTimeFormatter time12 = java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.ENGLISH);
+        java.time.format.DateTimeFormatter time24 = java.time.format.DateTimeFormatter.ofPattern("H:mm");
+
+        for (String part : parts) {
+            String clean = part.trim().toUpperCase();
+            if (clean.isEmpty()) continue;
+            
+            try {
+                if (clean.contains("AM") || clean.contains("PM")) {
+                    // Try 12h format. Note: "h:mm" might need padding if it's "8:00 AM" instead of "08:00 AM"
+                    // but h:mm pattern in Java handles single digit hours.
+                    times.add(LocalTime.parse(clean, time12));
+                } else {
+                    // Try 24h format
+                    times.add(LocalTime.parse(clean, time24));
+                }
+            } catch (Exception e) {
+                // Skip invalid formats silently in this simple version, or log it
+            }
+        }
         return times;
     }
 

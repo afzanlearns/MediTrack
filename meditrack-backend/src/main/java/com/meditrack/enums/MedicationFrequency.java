@@ -9,5 +9,6 @@ public enum MedicationFrequency {
     TWICE_DAILY,         // 2 doses per day (08:00, 20:00)
     THREE_TIMES_DAILY,   // 3 doses per day (08:00, 14:00, 20:00)
     EVERY_8_HOURS,       // 3 doses per day (08:00, 16:00, 00:00)
-    WEEKLY               // 1 dose per week (08:00 on the weekday matching startDate)
+    WEEKLY,              // 1 dose per week (08:00 on the weekday matching startDate)
+    CUSTOM               // User-defined specific times
 }
