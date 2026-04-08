@@ -207,7 +207,9 @@ export default function SymptomsPage() {
                 </div>
                 <p className="font-mono text-[11px] text-[#3D5166]">{item.dateLabel}</p>
                 {item.notes && (
-                  <p className="font-sans text-xs text-[#3D5166] mt-1.5 italic">{item.notes}</p>
+                  <p className="font-sans text-xs text-[#8A9BAE] mt-2 pt-2 border-t border-[#1C2530] italic line-clamp-3">
+                    {item.notes}
+                  </p>
                 )}
               </div>
               <div className="border-t border-[#1C2530] px-4 py-2.5 flex gap-4">

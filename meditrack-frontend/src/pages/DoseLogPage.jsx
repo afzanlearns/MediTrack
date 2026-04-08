@@ -49,10 +49,16 @@ export default function DoseLogPage() {
   }
 
   const handleStatus = async (dose, status) => {
+    let customNotes = null
+    if (status === 'TAKEN' || status === 'taken') {
+      const resp = window.prompt(`Add a note for ${dose.medication}? (Optional)`)
+      if (resp !== null) customNotes = resp
+    }
+
     try {
-      const updated = await updateDoseStatus(dose.id, status)
+      const updated = await updateDoseStatus(dose.id, status, customNotes)
       setDoses(prev =>
-        prev.map(item => item.id === dose.id ? mapDoseView(updated || { ...item, status }) : item)
+        prev.map(item => item.id === dose.id ? mapDoseView(updated || { ...item, status, notes: customNotes }) : item)
       )
     } catch {
       toast.error('Unable to update dose status')
@@ -129,7 +135,23 @@ export default function DoseLogPage() {
                 <p className="w-14 font-mono text-xs text-[#3D5166] flex-shrink-0">{dose.timeLabel}</p>
                 <div className="min-w-0 flex-1">
                   <p className="font-sans text-sm font-semibold text-[#F0F4F8] truncate">{dose.medication}</p>
-                  <p className="font-mono text-[11px] text-[#3D5166]">{dose.dosage}</p>
+                  <p className="font-mono text-[11px] text-[#3D5166]">{dose.dosageLabel}</p>
+                  
+                  {/* Notes logic */}
+                  {(dose.medicationNotes || dose.notes) && (
+                    <div className="mt-1.5 space-y-0.5">
+                      {dose.medicationNotes && (
+                        <p className="font-sans text-[10px] text-[#8A9BAE] italic leading-tight">
+                          {dose.medicationNotes}
+                        </p>
+                      )}
+                      {dose.notes && (
+                        <p className="font-sans text-[10px] text-[#00C896] italic leading-tight">
+                          Note: {dose.notes}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {dose.status !== 'PENDING' && (
                   <span className={`font-mono text-[10px] tracking-wide px-2 py-0.5 rounded-full flex-shrink-0 ${

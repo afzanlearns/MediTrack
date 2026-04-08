@@ -11,7 +11,11 @@ public class DoseStatusUpdateDTO {
 
     @NotNull(message = "Status is required")
     private DoseStatus status;
+    private String notes; // Optional custom note
 
     public DoseStatus getStatus() { return status; }
     public void setStatus(DoseStatus status) { this.status = status; }
+
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 }

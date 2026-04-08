@@ -132,6 +132,9 @@ public class DoseLogService {
                 .orElseThrow(() -> new ResourceNotFoundException("DoseLog", id));
 
         log.setStatus(request.getStatus());
+        if (request.getNotes() != null) {
+            log.setNotes(request.getNotes());
+        }
 
         if (request.getStatus() == DoseStatus.TAKEN) {
             log.setTakenTime(LocalDateTime.now());
@@ -252,8 +255,10 @@ public class DoseLogService {
         dto.setMedicationId(log.getMedication().getId());
         dto.setMedicationName(log.getMedication().getName());
         dto.setMedicationDosage(log.getMedication().getDosage());
+        dto.setMedicationNotes(log.getMedication().getNotes());
         dto.setScheduledTime(log.getScheduledTime());
         dto.setTakenTime(log.getTakenTime());
+        dto.setNotes(log.getNotes());
         dto.setStatus(log.getStatus());
         dto.setCreatedAt(log.getCreatedAt());
         return dto;

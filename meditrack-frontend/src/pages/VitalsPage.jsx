@@ -242,6 +242,51 @@ export default function VitalsPage() {
           </button>
         </form>
       </div>
+
+      {/* History History */}
+      <div className="mx-5 mb-10">
+        <h2 className="font-sans text-xs font-semibold tracking-[0.12em] uppercase text-[#3D5166] mb-4">
+          Measurement History
+        </h2>
+        {vitals.length === 0 ? (
+          <div className="card py-8 text-center text-[#3D5166] text-xs">No records yet.</div>
+        ) : (
+          <div className="space-y-3">
+            {[...vitals].reverse().map((item) => (
+              <div key={item.id || item.recordedDate} className="card px-4 py-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono text-[10px] text-[#3D5166]">{item.recordedDateLabel}</span>
+                </div>
+                <div className="flex gap-4">
+                  {item.systolic && (
+                    <div>
+                      <p className="font-mono text-sm text-[#F0F4F8]">{item.bloodPressureLabel}</p>
+                      <p className="font-mono text-[9px] text-[#3D5166] uppercase">BP</p>
+                    </div>
+                  )}
+                  {item.bloodSugar && (
+                    <div>
+                      <p className="font-mono text-sm text-[#F0F4F8]">{item.bloodSugar} <span className="text-[10px]">mg/dL</span></p>
+                      <p className="font-mono text-[9px] text-[#3D5166] uppercase">Sugar</p>
+                    </div>
+                  )}
+                  {item.heartRate && (
+                    <div>
+                      <p className="font-mono text-sm text-[#F0F4F8]">{item.heartRate} <span className="text-[10px]">bpm</span></p>
+                      <p className="font-mono text-[9px] text-[#3D5166] uppercase">HR</p>
+                    </div>
+                  )}
+                </div>
+                {item.notes && (
+                  <p className="font-sans text-xs text-[#8A9BAE] italic mt-2 pt-2 border-t border-[#1C2530]">
+                    {item.notes}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

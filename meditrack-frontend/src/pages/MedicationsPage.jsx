@@ -137,6 +137,11 @@ export default function MedicationsPage() {
                   </span>
                 </div>
                 <p className="font-mono text-[11px] text-[#3D5166] mt-2">Started {med.startDateLabel}</p>
+                {med.notes && (
+                  <p className="font-sans text-xs text-[#8A9BAE] mt-3 pt-3 border-t border-[#1C2530] italic">
+                    {med.notes}
+                  </p>
+                )}
               </div>
               {/* Action row — separated by top border */}
               <div className="border-t border-[#1C2530] px-4 py-2.5 flex gap-4">

@@ -16,6 +16,8 @@ public class DoseLogDTO {
     private LocalDateTime scheduledTime;
     private LocalDateTime takenTime;
     private DoseStatus status;
+    private String notes;            // Dose-specific note
+    private String medicationNotes;  // From the parent medication
     private LocalDateTime createdAt;
 
     public DoseLogDTO() {}
@@ -41,6 +43,12 @@ public class DoseLogDTO {
 
     public DoseStatus getStatus() { return status; }
     public void setStatus(DoseStatus status) { this.status = status; }
+
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+
+    public String getMedicationNotes() { return medicationNotes; }
+    public void setMedicationNotes(String medicationNotes) { this.medicationNotes = medicationNotes; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

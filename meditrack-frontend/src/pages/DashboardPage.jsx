@@ -77,9 +77,15 @@ export default function DashboardPage() {
   }
 
   const handleDoseStatus = async (dose, status) => {
+    let customNotes = null
+    if (status === 'TAKEN' || status === 'taken') {
+      const resp = window.prompt(`Notes for ${dose.medication}? (Optional)`)
+      if (resp !== null) customNotes = resp
+    }
+
     try {
-      const updated = await updateDoseStatus(dose.id, status)
-      setDoses((prev) => prev.map((item) => (item.id === dose.id ? mapDoseView(updated || { ...item, status }) : item)))
+      const updated = await updateDoseStatus(dose.id, status, customNotes)
+      setDoses((prev) => prev.map((item) => (item.id === dose.id ? mapDoseView(updated || { ...item, status, notes: customNotes }) : item)))
     } catch {
       toast.danger('Unable to update dose status.')
     }
@@ -204,6 +210,22 @@ export default function DashboardPage() {
                   <p className="font-mono text-[11px] text-[#3D5166]">{dose.timeLabel}</p>
                   <p className="font-sans text-sm font-medium text-[#F0F4F8] mt-0.5">{dose.medication}</p>
                   <p className="font-sans text-xs text-[#3D5166]">{dose.dosageLabel}</p>
+                  
+                  {/* Notes display */}
+                  {(dose.medicationNotes || dose.notes) && (
+                    <div className="mt-2 space-y-1">
+                      {dose.medicationNotes && (
+                        <p className="font-sans text-[10px] text-[#8A9BAE] italic leading-tight">
+                          {dose.medicationNotes}
+                        </p>
+                      )}
+                      {dose.notes && (
+                        <p className="font-sans text-[10px] text-[#00C896] italic leading-tight">
+                          Note: {dose.notes}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {status === 'taken' ? (
@@ -249,6 +271,9 @@ export default function DashboardPage() {
               <div>
                 <p className="font-sans text-sm font-medium text-[#F0F4F8]">{symptom.name}</p>
                 <p className="font-mono text-[11px] text-[#3D5166] mt-0.5">{symptom.dateLabel || format(new Date(symptom.timestamp), 'h:mm a')}</p>
+                {symptom.notes && (
+                  <p className="font-sans text-[10px] text-[#8A9BAE] italic mt-1">{symptom.notes}</p>
+                )}
               </div>
               <span className={`font-mono text-xs px-2 py-0.5 rounded-md ${
                 symptom.severity <= 3 ? 'text-[#00C896] bg-[#00C8961A]' :
@@ -289,6 +314,11 @@ export default function DashboardPage() {
                 </React.Fragment>
               ))}
             </div>
+          )}
+          {latestVitals.notes && (
+            <p className="font-sans text-[10px] text-[#8A9BAE] italic mt-3 pt-3 border-t border-[#1C2530]">
+              {latestVitals.notes}
+            </p>
           )}
         </div>
       )}

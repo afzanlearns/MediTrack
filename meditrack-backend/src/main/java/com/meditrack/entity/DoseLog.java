@@ -31,6 +31,9 @@ public class DoseLog {
     @Column(nullable = false, length = 20)
     private DoseStatus status = DoseStatus.PENDING;
 
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -57,6 +60,9 @@ public class DoseLog {
 
     public DoseStatus getStatus() { return status; }
     public void setStatus(DoseStatus status) { this.status = status; }
+
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

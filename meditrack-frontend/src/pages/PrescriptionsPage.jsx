@@ -161,6 +161,11 @@ export default function PrescriptionsPage() {
                   <p className="font-mono text-[11px] text-[#3D5166] mt-0.5">
                     Dr. {doc.doctorName || 'Unknown'} · {format(new Date(doc.prescribedDate), 'MMM d, yyyy')}
                   </p>
+                  {doc.notes && (
+                    <p className="font-sans text-xs text-[#8A9BAE] italic mt-2 pt-2 border-t border-[#1C2530]">
+                      {doc.notes}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="border-t border-[#1C2530] px-4 py-2.5 flex gap-4">

@@ -46,6 +46,8 @@ export const mapDoseView = (dose) => {
     dosageLabel: (dose.medicationDosage || dose.dosage) ? 
       ((dose.medicationDosage || dose.dosage).toLowerCase().includes('mg') ? (dose.medicationDosage || dose.dosage) : `${(dose.medicationDosage || dose.dosage)} mg`) 
       : '—',
+    medicationNotes: dose.medicationNotes || '',
+    notes: dose.notes || '',
     timeLabel: dose.time || formatApiTime(scheduledAt),
     dateKey: dose.date || (scheduledAt ? format(new Date(scheduledAt), 'yyyy-MM-dd') : null),
   }

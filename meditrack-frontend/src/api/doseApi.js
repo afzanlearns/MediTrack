@@ -97,9 +97,9 @@ export const generateDoses = async (date) => {
   return res.data
 }
 
-export const updateDoseStatus = async (id, status) => {
-  if (isGuest()) return guestStorage.updateDose(id, { status })
-  const res = await axiosInstance.patch(`/doses/${id}/status`, { status })
+export const updateDoseStatus = async (id, status, notes = null) => {
+  if (isGuest()) return guestStorage.updateDose(id, { status, notes })
+  const res = await axiosInstance.patch(`/doses/${id}/status`, { status, notes })
   return res.data
 }
 
