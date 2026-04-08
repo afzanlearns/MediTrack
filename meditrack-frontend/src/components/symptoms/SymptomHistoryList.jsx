@@ -1,5 +1,6 @@
+import React, { useState } from 'react'
 import { deleteSymptom } from '../../api/symptomApi'
-
+import ConfirmDialog from '../ui/ConfirmDialog'
 const SEV_COLOR = (s) => {
   if (s <= 3) return 'bg-green-100 text-green-700'
   if (s <= 6) return 'bg-yellow-100 text-yellow-700'
@@ -7,13 +8,21 @@ const SEV_COLOR = (s) => {
 }
 
 export default function SymptomHistoryList({ symptoms, onDeleted }) {
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this symptom entry?')) return
+  const [symptomToDelete, setSymptomToDelete] = useState(null)
+
+  const confirmDelete = (id) => {
+    setSymptomToDelete(id)
+  }
+
+  const handleDelete = async () => {
+    if (!symptomToDelete) return
     try {
-      await deleteSymptom(id)
-      onDeleted(id)
+      await deleteSymptom(symptomToDelete)
+      onDeleted(symptomToDelete)
     } catch {
       // Toast handles the error display
+    } finally {
+      setSymptomToDelete(null)
     }
   }
 
@@ -52,7 +61,7 @@ export default function SymptomHistoryList({ symptoms, onDeleted }) {
               <td className="px-4 py-3 text-text-muted max-w-xs truncate">{s.notes || '—'}</td>
               <td className="px-4 py-3">
                 <button
-                  onClick={() => handleDelete(s.id)}
+                  onClick={() => confirmDelete(s.id)}
                   className="text-red-500 hover:text-red-700 text-xs font-medium"
                 >
                   Delete
@@ -62,6 +71,14 @@ export default function SymptomHistoryList({ symptoms, onDeleted }) {
           ))}
         </tbody>
       </table>
+
+      <ConfirmDialog 
+        isOpen={!!symptomToDelete}
+        onClose={() => setSymptomToDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Symptom"
+        message="Are you sure you want to delete this symptom entry?"
+      />
     </div>
   )
 }

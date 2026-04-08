@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getProfile, getIceContacts, createIceContact, deleteIceContact } from '../api/profileApi'
 import { toast } from '../utils/toast'
 import { Phone, ArrowLeft, Plus, Trash2, X } from 'lucide-react'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 
 export default function EmergencyPage() {
   const navigate = useNavigate()
@@ -18,6 +19,7 @@ export default function EmergencyPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [newContact, setNewContact] = useState({ fullName: '', phonePrimary: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [contactToDelete, setContactToDelete] = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -85,14 +87,20 @@ export default function EmergencyPage() {
     }
   }
 
-  const handleDeleteContact = async (id) => {
-    if (!window.confirm('Remove this emergency contact?')) return
+  const confirmDelete = (id) => {
+    setContactToDelete(id)
+  }
+
+  const handleDeleteContact = async () => {
+    if (!contactToDelete) return
     try {
-      await deleteIceContact(id)
-      setIceContacts(iceContacts.filter(c => c.id !== id))
+      await deleteIceContact(contactToDelete)
+      setIceContacts(iceContacts.filter(c => c.id !== contactToDelete))
       toast.success('Contact removed')
     } catch (err) {
       toast.error('Failed to remove contact')
+    } finally {
+      setContactToDelete(null)
     }
   }
 
@@ -226,7 +234,7 @@ export default function EmergencyPage() {
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  handleDeleteContact(contact.id)
+                  confirmDelete(contact.id)
                 }}
                 className="absolute right-5 top-1/2 -translate-y-1/2 p-2 text-[#3D5166] hover:text-[#D95B5B] transition-colors"
                 title="Remove Contact"
@@ -292,6 +300,14 @@ export default function EmergencyPage() {
       <div className="mx-5 text-center mt-4">
         <p className="font-mono text-[10px] text-[#3D5166]">For medical personnel use only</p>
       </div>
+
+      <ConfirmDialog 
+        isOpen={!!contactToDelete}
+        onClose={() => setContactToDelete(null)}
+        onConfirm={handleDeleteContact}
+        title="Remove Contact"
+        message="Are you sure you want to remove this emergency contact?"
+      />
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { getActiveMeds } from '../api/medicationApi'
 import VisitFormModal from '../components/visits/VisitFormModal'
 import { mapVisitView } from '../utils/viewMappers'
 import { toast } from '../utils/toast'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 
 export default function DoctorVisitsPage() {
   const [search, setSearch] = useState('')
@@ -13,6 +14,7 @@ export default function DoctorVisitsPage() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingVisit, setEditingVisit] = useState(null)
+  const [visitToDelete, setVisitToDelete] = useState(null)
 
   const loadData = async () => {
     setLoading(true)
@@ -64,14 +66,20 @@ export default function DoctorVisitsPage() {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this visit?')) return
+  const confirmDelete = (id) => {
+    setVisitToDelete(id)
+  }
+
+  const handleDelete = async () => {
+    if (!visitToDelete) return
     try {
-      await deleteVisit(id)
-      setVisits((prev) => prev.filter((visit) => visit.id !== id))
+      await deleteVisit(visitToDelete)
+      setVisits((prev) => prev.filter((visit) => visit.id !== visitToDelete))
       toast.success('Visit deleted.')
     } catch {
       toast.danger('Unable to delete visit.')
+    } finally {
+      setVisitToDelete(null)
     }
   }
 
@@ -128,7 +136,7 @@ export default function DoctorVisitsPage() {
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => handleEdit(visit)} className="text-[#3D5166] press"><Pencil size={14} /></button>
-                  <button onClick={() => handleDelete(visit.id)} className="text-[#3D5166] press"><Trash2 size={14} /></button>
+                  <button onClick={() => confirmDelete(visit.id)} className="text-[#3D5166] press"><Trash2 size={14} /></button>
                 </div>
               </div>
               <div className="flex items-center gap-2 mb-3">
@@ -165,6 +173,14 @@ export default function DoctorVisitsPage() {
           }}
         />
       )}
+
+      <ConfirmDialog 
+        isOpen={!!visitToDelete}
+        onClose={() => setVisitToDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Visit"
+        message="Are you sure you want to delete this doctor visit? This action cannot be undone."
+      />
     </div>
   )
 }

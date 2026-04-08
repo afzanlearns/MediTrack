@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Check, AlertCircle, FastForward, RotateCcw }
 import { getDosesForDate, generateDoses, updateDoseStatus } from '../api/doseApi'
 import { mapDoseView } from '../utils/viewMappers'
 import { toast } from '../utils/toast'
+import DoseNoteModal from '../components/doses/DoseNoteModal'
 
 const FILTERS = ['ALL', 'PENDING', 'TAKEN', 'MISSED', 'SKIPPED']
 
@@ -13,6 +14,10 @@ export default function DoseLogPage() {
   const [doses, setDoses] = useState([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+
+  // Modals state
+  const [activeDose, setActiveDose] = useState(null)
+  const [isNoteModalOpen, setNoteModalOpen] = useState(false)
 
   const dateKey = format(currentDate, 'yyyy-MM-dd')
 
@@ -48,13 +53,12 @@ export default function DoseLogPage() {
     }
   }
 
-  const handleStatus = async (dose, status) => {
-    let customNotes = null
-    if (status === 'TAKEN' || status === 'taken') {
-      const resp = window.prompt(`Add a note for ${dose.medication}? (Optional)`)
-      if (resp !== null) customNotes = resp
-    }
+  const handleOpenNoteModal = (dose) => {
+    setActiveDose(dose)
+    setNoteModalOpen(true)
+  }
 
+  const handleStatusConfirmed = async (dose, status, customNotes = null) => {
     try {
       const updated = await updateDoseStatus(dose.id, status, customNotes)
       setDoses(prev =>
@@ -64,6 +68,10 @@ export default function DoseLogPage() {
     } catch {
       toast.error('Unable to update dose status')
     }
+  }
+
+  const handleStatus = async (dose, status) => {
+    return handleStatusConfirmed(dose, status, null)
   }
 
   return (
@@ -176,7 +184,7 @@ export default function DoseLogPage() {
               {dose.status === 'PENDING' && (
                 <div className="border-t border-[#1C2530] px-4 py-2.5 flex gap-4">
                   <button
-                    onClick={() => handleStatus(dose, 'TAKEN')}
+                    onClick={() => handleOpenNoteModal(dose)}
                     className="flex items-center gap-1.5 text-[#00C896] text-xs font-sans press"
                   >
                     <Check size={11} /> Taken
@@ -199,6 +207,13 @@ export default function DoseLogPage() {
           ))
         )}
       </div>
+
+      <DoseNoteModal 
+        isOpen={isNoteModalOpen} 
+        onClose={() => setNoteModalOpen(false)} 
+        dose={activeDose} 
+        onConfirm={handleStatusConfirmed} 
+      />
     </div>
   )
 }

@@ -1,12 +1,17 @@
 import { useState } from 'react'
-
+import ConfirmDialog from '../ui/ConfirmDialog'
 export default function VisitCard({ visit, onEdit, onDelete }) {
   const [expanded, setExpanded] = useState(false)
 
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  const confirmDelete = () => {
+    setShowConfirm(true)
+  }
+
   const handleDelete = () => {
-    if (window.confirm(`Delete visit with Dr. ${visit.doctorName}?`)) {
-      onDelete(visit.id)
-    }
+    onDelete(visit.id)
+    setShowConfirm(false)
   }
 
   return (
@@ -43,7 +48,7 @@ export default function VisitCard({ visit, onEdit, onDelete }) {
             Edit
           </button>
           <button
-            onClick={e => { e.stopPropagation(); handleDelete() }}
+            onClick={e => { e.stopPropagation(); confirmDelete() }}
             className="text-red-500 hover:text-red-700 text-xs font-medium px-2 py-1 rounded hover:bg-red-50"
           >
             Delete
@@ -81,6 +86,14 @@ export default function VisitCard({ visit, onEdit, onDelete }) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog 
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleDelete}
+        title="Delete Visit"
+        message={`Are you sure you want to delete the visit with Dr. ${visit.doctorName}?`}
+      />
     </div>
   )
 }

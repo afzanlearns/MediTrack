@@ -28,25 +28,25 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div 
-        className="absolute inset-0 bg-black/30" 
+        className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" 
         onClick={onClose} 
       />
       <div 
         ref={modalRef}
-        className={`relative w-full bg-bg-surface rounded-xl border border-border shadow-soft flex flex-col max-h-[90vh] ${sizes[size]}`}
+        className={`relative w-full bg-[#0E1318] rounded-xl border border-[#1C2530] shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200 ${sizes[size]}`}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1C2530]">
+          <h3 className="font-sans text-lg font-semibold text-[#F0F4F8]">{title}</h3>
           <button 
             onClick={onClose}
-            className="text-text-secondary hover:text-text-primary transition-colors"
+            className="text-[#8A9BAE] hover:text-[#F0F4F8] transition-colors p-1.5 rounded-lg hover:bg-[#141B23]"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5 text-text-primary">
+        <div className="flex-1 overflow-y-auto p-5 text-[#F0F4F8] custom-scrollbar">
           {children}
         </div>
       </div>

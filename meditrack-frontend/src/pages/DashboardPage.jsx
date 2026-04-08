@@ -9,6 +9,8 @@ import { updateDoseStatus, generateDoses } from '../api/doseApi'
 import { mapDoseView, mapSymptomView, mapVitalsView } from '../utils/viewMappers'
 import { toast } from '../utils/toast'
 import { requestNotificationPermission, subscribeToPushNotifications } from '../services/pushService'
+import DoseNoteModal from '../components/doses/DoseNoteModal'
+import NotificationDrawer from '../components/dashboard/NotificationDrawer'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -21,6 +23,11 @@ export default function DashboardPage() {
   const [doses, setDoses] = useState([])
   const [loading, setLoading] = useState(true)
   const [isSlowNetwork, setIsSlowNetwork] = useState(false)
+
+  // Modals state
+  const [activeDose, setActiveDose] = useState(null)
+  const [isNoteModalOpen, setNoteModalOpen] = useState(false)
+  const [isDrawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     // Network Information API
@@ -77,13 +84,12 @@ export default function DashboardPage() {
     }
   }
 
-  const handleDoseStatus = async (dose, status) => {
-    let customNotes = null
-    if (status === 'TAKEN' || status === 'taken') {
-      const resp = window.prompt(`Notes for ${dose.medication}? (Optional)`)
-      if (resp !== null) customNotes = resp
-    }
+  const handleOpenNoteModal = (dose) => {
+    setActiveDose(dose)
+    setNoteModalOpen(true)
+  }
 
+  const handleDoseStatusConfirmed = async (dose, status, customNotes = null) => {
     try {
       const updated = await updateDoseStatus(dose.id, status, customNotes)
       setDoses((prev) => prev.map((item) => (item.id === dose.id ? mapDoseView(updated || { ...item, status, notes: customNotes }) : item)))
@@ -91,6 +97,12 @@ export default function DashboardPage() {
     } catch {
       toast.danger('Unable to update dose status.')
     }
+  }
+
+  const handleDoseStatus = async (dose, status) => {
+    // Legacy support for other statuses if needed, though take/skip go through modal now.
+    // If we want skip to be direct without modal, we can still call this directly.
+    return handleDoseStatusConfirmed(dose, status, null)
   }
 
   const handleGenerate = async () => {
@@ -175,7 +187,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <button className="mt-1 w-10 h-10 rounded-xl bg-[#0E1318] border border-[#1C2530] 
+        <button 
+          onClick={() => setDrawerOpen(true)}
+          className="mt-1 w-10 h-10 rounded-xl bg-[#0E1318] border border-[#1C2530] 
                            flex items-center justify-center relative press">
           <Bell size={18} strokeWidth={1.5} className="text-[#8A9BAE]" />
           {pendingDoses.length > 0 && (
@@ -215,7 +229,7 @@ export default function DashboardPage() {
       <div className="flex gap-2.5 px-5 mb-6">
         <div className="flex-1 card px-3 py-4 bg-[#0E1318] border-[#1C2530]">
           <Pill size={14} strokeWidth={1.5} className="text-[#3D5166] mb-3" />
-          <p className="font-mono text-2xl font-light text-[#F0F4F8] leading-none">
+          <p className="font-sans text-2xl font-light text-[#F0F4F8] leading-none">
             {summary?.activeMedicationCount ?? 0}
           </p>
           <p className="font-sans text-[10px] text-[#3D5166] mt-2 uppercase tracking-tighter">Active Meds</p>
@@ -223,7 +237,7 @@ export default function DashboardPage() {
 
         <div className="flex-1 card px-3 py-4 bg-[#0E1318] border-[#1C2530]">
           <Clock size={14} strokeWidth={1.5} className="text-[#3D5166] mb-3" />
-          <p className={`font-mono text-2xl font-light leading-none ${nextDoseInfo.isNow ? 'text-[#E8A838]' : 'text-[#F0F4F8]'}`}>
+          <p className={`font-sans text-2xl font-light leading-none ${nextDoseInfo.isNow ? 'text-[#E8A838]' : 'text-[#F0F4F8]'}`}>
             {nextDoseInfo.label}
           </p>
           <p className="font-sans text-[10px] text-[#3D5166] mt-2 uppercase tracking-tighter">Next Dose</p>
@@ -231,7 +245,7 @@ export default function DashboardPage() {
 
         <div className="flex-1 card px-3 py-4 bg-[#0E1318] border-[#1C2530]">
           <CheckCircle size={14} strokeWidth={1.5} className="text-[#3D5166] mb-3" />
-          <p className="font-mono text-2xl font-light text-[#F0F4F8] leading-none">
+          <p className="font-sans text-2xl font-light text-[#F0F4F8] leading-none">
             {takenToday}<span className="text-sm text-[#3D5166] ml-0.5">/{todaysDoses}</span>
           </p>
           <p className="font-sans text-[10px] text-[#3D5166] mt-2 uppercase tracking-tighter">Completed</p>
@@ -255,14 +269,14 @@ export default function DashboardPage() {
             <div className="flex-1 px-4 py-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-mono text-[11px] text-[#3D5166]">{dose.timeLabel}</p>
-                <p className="font-sans text-[15px] font-semibold text-[#F0F4F8] mt-0.5 truncate uppercase tracking-tight">
+                <p className="font-sans text-[15px] font-semibold text-[#F0F4F8] mt-0.5 truncate tracking-tight">
                   {dose.medication}
                 </p>
                 <p className="font-sans text-xs text-[#3D5166] mt-0.5">{dose.dosageLabel}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button 
-                  onClick={() => handleDoseStatus(dose, 'TAKEN')}
+                  onClick={() => handleOpenNoteModal(dose)}
                   className="font-sans text-[11px] font-bold text-[#00C896] bg-[#00C89615] 
                              px-3.5 py-2 rounded-lg press border border-[#00C89630]"
                 >
@@ -457,6 +471,24 @@ export default function DashboardPage() {
           </Link>
         </div>
       )}
+
+      {/* Modals and Drawers */}
+      <DoseNoteModal 
+        isOpen={isNoteModalOpen} 
+        onClose={() => setNoteModalOpen(false)} 
+        dose={activeDose} 
+        onConfirm={handleDoseStatusConfirmed} 
+      />
+
+      <NotificationDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setDrawerOpen(false)} 
+        pendingDoses={pendingDoses}
+        onTakeDose={(dose) => {
+          setDrawerOpen(false)
+          handleOpenNoteModal(dose)
+        }}
+      />
     </div>
   )
 }

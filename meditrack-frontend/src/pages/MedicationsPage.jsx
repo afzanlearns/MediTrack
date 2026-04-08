@@ -4,6 +4,7 @@ import MedicationFormModal from '../components/medications/MedicationFormModal'
 import { getMedications, createMedication, updateMedication, deleteMedication } from '../api/medicationApi'
 import { mapMedicationView } from '../utils/viewMappers'
 import { toast } from '../utils/toast'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 
 export default function MedicationsPage() {
   const [medications, setMedications] = useState([])
@@ -11,6 +12,7 @@ export default function MedicationsPage() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingMedication, setEditingMedication] = useState(null)
+  const [medToDelete, setMedToDelete] = useState(null)
 
   const loadMedications = async () => {
     setLoading(true)
@@ -63,14 +65,20 @@ export default function MedicationsPage() {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this medication?')) return
+  const confirmDelete = (id) => {
+    setMedToDelete(id)
+  }
+
+  const handleDelete = async () => {
+    if (!medToDelete) return
     try {
-      await deleteMedication(id)
-      setMedications((prev) => prev.filter((med) => med.id !== id))
+      await deleteMedication(medToDelete)
+      setMedications((prev) => prev.filter((med) => med.id !== medToDelete))
       toast.success('Medication deleted.')
     } catch {
       toast.danger('Failed to delete medication.')
+    } finally {
+      setMedToDelete(null)
     }
   }
 
@@ -152,7 +160,7 @@ export default function MedicationsPage() {
                   <Pencil size={11} /> Edit
                 </button>
                 <button 
-                  onClick={() => handleDelete(med.id)}
+                  onClick={() => confirmDelete(med.id)}
                   className="flex items-center gap-1.5 text-[#D95B5B] text-xs font-sans press"
                 >
                   <Trash2 size={11} /> Delete
@@ -173,6 +181,14 @@ export default function MedicationsPage() {
           }}
         />
       )}
+
+      <ConfirmDialog 
+        isOpen={!!medToDelete}
+        onClose={() => setMedToDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Medication"
+        message="Are you sure you want to delete this medication? This will also remove associated doses."
+      />
     </div>
   )
 }
