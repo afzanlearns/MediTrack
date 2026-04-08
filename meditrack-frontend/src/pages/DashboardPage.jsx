@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pill, Calendar, CheckCircle, Check, Search, Activity, Heart, Clock } from 'lucide-react'
+import { Pill, Calendar, CheckCircle, Check, Search, Activity, Heart, Clock, RotateCcw } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuth } from '../contexts/AuthContext'
 import { useAuthModal } from '../contexts/AuthModalContext'
@@ -86,6 +86,7 @@ export default function DashboardPage() {
     try {
       const updated = await updateDoseStatus(dose.id, status, customNotes)
       setDoses((prev) => prev.map((item) => (item.id === dose.id ? mapDoseView(updated || { ...item, status, notes: customNotes }) : item)))
+      if (status === 'PENDING') toast.success('Dose reset back to pending.')
     } catch {
       toast.danger('Unable to update dose status.')
     }
@@ -198,8 +199,9 @@ export default function DashboardPage() {
       ) : (
         doses.map((dose) => {
           const status = dose.status.toLowerCase()
+          const isDone = status !== 'pending' && status !== 'due'
           return (
-            <div key={dose.id} className="mx-5 mb-2 card overflow-hidden flex">
+            <div key={dose.id} className={`mx-5 mb-2 card overflow-hidden flex transition-opacity duration-300 ${isDone ? 'opacity-40' : 'opacity-100'}`}>
               <div className={`w-[3px] flex-shrink-0 ${
                 status === 'taken'  ? 'bg-[#00C896]' :
                 status === 'due'    ? 'bg-[#E8A838]' :
@@ -228,10 +230,15 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {status === 'taken' ? (
-                    <span className="font-mono text-[11px] text-[#00C896] flex items-center gap-1">
-                      <Check size={10} /> taken
-                    </span>
+                  {status === 'taken' || status === 'skipped' || status === 'missed' ? (
+                    <button 
+                      onClick={() => handleDoseStatus(dose, 'PENDING')}
+                      className="flex items-center gap-1.5 text-[#3D5166] hover:text-[#00C896] transition-colors press"
+                      title="Reset to pending"
+                    >
+                      <span className="font-mono text-[11px] uppercase tracking-wider">{status}</span>
+                      <RotateCcw size={12} strokeWidth={2.5} />
+                    </button>
                   ) : (
                     <>
                       <button 

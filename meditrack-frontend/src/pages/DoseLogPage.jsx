@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { format, addDays, subDays } from 'date-fns'
-import { ChevronLeft, ChevronRight, Check, AlertCircle, FastForward } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, AlertCircle, FastForward, RotateCcw } from 'lucide-react'
 import { getDosesForDate, generateDoses, updateDoseStatus } from '../api/doseApi'
 import { mapDoseView } from '../utils/viewMappers'
 import { toast } from '../utils/toast'
@@ -60,6 +60,7 @@ export default function DoseLogPage() {
       setDoses(prev =>
         prev.map(item => item.id === dose.id ? mapDoseView(updated || { ...item, status, notes: customNotes }) : item)
       )
+      if (status === 'PENDING') toast.success('Dose reset back to pending.')
     } catch {
       toast.error('Unable to update dose status')
     }
@@ -130,7 +131,7 @@ export default function DoseLogPage() {
           </div>
         ) : (
           filtered.map(dose => (
-            <div key={dose.id} className="mx-5 card overflow-hidden">
+            <div key={dose.id} className={`mx-5 card overflow-hidden transition-opacity duration-300 ${dose.status !== 'PENDING' ? 'opacity-40' : 'opacity-100'}`}>
               <div className="px-4 py-3.5 flex items-center gap-3">
                 <p className="w-14 font-mono text-xs text-[#3D5166] flex-shrink-0">{dose.timeLabel}</p>
                 <div className="min-w-0 flex-1">
@@ -154,13 +155,22 @@ export default function DoseLogPage() {
                   )}
                 </div>
                 {dose.status !== 'PENDING' && (
-                  <span className={`font-mono text-[10px] tracking-wide px-2 py-0.5 rounded-full flex-shrink-0 ${
-                    dose.status === 'TAKEN' ? 'text-[#00C896] bg-[#00C8961A]' :
-                    dose.status === 'MISSED' ? 'text-[#D95B5B] bg-[#D95B5B1A]' :
-                    'text-[#3D5166] bg-[#141B23]'
-                  }`}>
-                    {dose.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`font-mono text-[10px] tracking-wide px-2 py-0.5 rounded-full flex-shrink-0 ${
+                      dose.status === 'TAKEN' ? 'text-[#00C896] bg-[#00C8961A]' :
+                      dose.status === 'MISSED' ? 'text-[#D95B5B] bg-[#D95B5B1A]' :
+                      'text-[#3D5166] bg-[#141B23]'
+                    }`}>
+                      {dose.status}
+                    </span>
+                    <button 
+                      onClick={() => handleStatus(dose, 'PENDING')}
+                      className="text-[#3D5166] hover:text-[#00C896] transition-colors press"
+                      title="Reset to pending"
+                    >
+                      <RotateCcw size={13} strokeWidth={2.5} />
+                    </button>
+                  </div>
                 )}
               </div>
               {dose.status === 'PENDING' && (
