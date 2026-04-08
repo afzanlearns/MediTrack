@@ -39,7 +39,7 @@ export const getDosesByRange = async (from, to, status) => {
 
 export const generateDoses = async (date) => {
   if (isGuest()) {
-    const meds = guestStorage.getMedications().filter((m) => m.isActive !== false)
+    const meds = guestStorage.getMedications().filter((m) => m.isActive !== false && m.active !== false)
     const existing = guestStorage.getDoses().filter((d) => toDateKey(d) === date)
 
     if (existing.length > 0) return existing
@@ -66,7 +66,8 @@ export const generateDoses = async (date) => {
       )
     })
 
-    return generated
+    // Return the full list for today
+    return guestStorage.getDoses().filter((d) => toDateKey(d) === date)
   }
 
   const res = await axiosInstance.post('/doses/generate', null, { params: { date } })

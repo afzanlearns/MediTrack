@@ -97,7 +97,6 @@ public class DoseLogService {
      */
     public List<DoseLogDTO> generateDosesForDate(LocalDate date) {
         List<Medication> activeMedications = medicationRepository.findActiveMedicationsForDate(date);
-        List<DoseLog> newLogs = new ArrayList<>();
 
         for (Medication med : activeMedications) {
             List<LocalTime> times = getDoseTimes(med.getFrequency(), med.getStartDate(), date);
@@ -112,12 +111,13 @@ public class DoseLogService {
                     log.setMedication(med);
                     log.setScheduledTime(scheduledDateTime);
                     log.setStatus(DoseStatus.PENDING);
-                    newLogs.add(doseLogRepository.save(log));
+                    doseLogRepository.save(log);
                 }
             }
         }
 
-        return newLogs.stream().map(this::toDTO).collect(Collectors.toList());
+        // Return the FULL list for the date (both old and new)
+        return getDosesForDate(date);
     }
 
     // ─── Update Status ───────────────────────────────────────────────────────

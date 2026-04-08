@@ -30,7 +30,7 @@ export const deleteMedication = async (id) => {
 }
 
 export const getActiveMeds = async () => {
-  if (isGuest()) return guestStorage.getMedications().filter(m => m.active !== false)
+  if (isGuest()) return guestStorage.getMedications().filter(m => m.isActive !== false && m.active !== false)
   const res = await axiosInstance.get('/medications/active')
   return res.data
 }

@@ -58,16 +58,19 @@ export const guestStorage = {
     const doses = guestStorage.getDoses()
     const symptoms = guestStorage.getSymptoms()
     const vitals = guestStorage.getVitals()
-    const today = new Date().toISOString().slice(0, 10)
+    // Use local date (YYYY-MM-DD) instead of UTC to avoid shifting dates near midnight
+    const today = new Date().toLocaleDateString('en-CA') // en-CA gives YYYY-MM-DD
 
     const todaysDoses = doses.filter((dose) => {
-      if (dose.date) return dose.date === today
-      if (dose.scheduledTime) return String(dose.scheduledTime).slice(0, 10) === today
-      return false
+      const doseDate = dose.date || (dose.scheduledTime ? String(dose.scheduledTime).slice(0, 10) : null)
+      return doseDate === today
     })
 
-    const taken = doses.filter((dose) => dose.status === 'TAKEN').length
-    const considered = doses.filter((dose) => dose.status === 'TAKEN' || dose.status === 'MISSED').length
+    const taken = doses.filter((dose) => dose.status === 'TAKEN' || dose.status === 'taken').length
+    const considered = doses.filter((dose) => 
+      dose.status === 'TAKEN' || dose.status === 'taken' || 
+      dose.status === 'MISSED' || dose.status === 'missed'
+    ).length
     const adherencePercentage = considered === 0 ? 100 : Number(((taken / considered) * 100).toFixed(1))
 
     const recentSymptoms = [...symptoms]
@@ -80,7 +83,8 @@ export const guestStorage = {
 
     return {
       adherencePercentage,
-      activeMedicationCount: meds.filter((med) => med.isActive !== false).length,
+      // Standardize on med.isActive (viewMapper handles undefined -> true)
+      activeMedicationCount: meds.filter((med) => med.isActive !== false && med.active !== false).length,
       todaysDoses,
       recentSymptoms,
       nextAppointment: null,
