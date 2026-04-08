@@ -55,7 +55,12 @@ export const getDosesByRange = async (from, to, status) => {
 
 export const generateDoses = async (date) => {
   if (isGuest()) {
-    const meds = guestStorage.getMedications().filter((m) => m.isActive !== false && m.active !== false)
+    const meds = guestStorage.getMedications().filter((m) => {
+      const active = m.isActive !== false && m.active !== false
+      const started = !m.startDate || m.startDate <= date
+      const notEnded = !m.endDate || m.endDate >= date
+      return active && started && notEnded
+    })
     const existing = guestStorage.getDoses().filter((d) => toDateKey(d) === date)
 
     if (existing.length > 0) return existing

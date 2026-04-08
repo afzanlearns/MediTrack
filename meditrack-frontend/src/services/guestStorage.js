@@ -84,7 +84,12 @@ export const guestStorage = {
     return {
       adherencePercentage,
       // Standardize on med.isActive (viewMapper handles undefined -> true)
-      activeMedicationCount: meds.filter((med) => med.isActive !== false && med.active !== false).length,
+      activeMedicationCount: meds.filter((m) => {
+        const active = m.isActive !== false && m.active !== false
+        const started = !m.startDate || m.startDate <= today
+        const notEnded = !m.endDate || m.endDate >= today
+        return active && started && notEnded
+      }).length,
       todaysDoses,
       recentSymptoms,
       nextAppointment: null,

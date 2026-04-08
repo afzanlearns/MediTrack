@@ -52,8 +52,12 @@ public class DashboardService {
         DashboardSummaryDTO summary = new DashboardSummaryDTO();
 
         summary.setAdherencePercentage(doseLogService.calculateAdherencePercentage(30));
-        summary.setActiveMedicationCount((int) medicationRepository.countByIsActiveTrue());
-        summary.setTodaysDoses(doseLogService.getDosesForDate(LocalDate.now()));
+        
+        LocalDate today = LocalDate.now();
+        int activeCount = medicationRepository.findActiveMedicationsForDate(today).size();
+        summary.setActiveMedicationCount(activeCount);
+        
+        summary.setTodaysDoses(doseLogService.getDosesForDate(today));
         summary.setRecentSymptoms(symptomService.getRecentSymptoms(5));
 
         // Next Appointment
